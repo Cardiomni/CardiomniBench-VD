@@ -5,8 +5,8 @@
 #
 # On the H20 server, after `docker build -t cardiomni:latest docker/agent`:
 #   python -m pipeline.cli run --config configs/smoke_docker.yaml
-# Then inspect runs/smoke_docker/rerun_0/case_smoke/out/gpu.txt to confirm the
-# GPU was visible inside the container.
+# Then inspect runs/smoke_docker/rerun_0/case_smoke/gpu.txt to confirm the
+# GPU was visible inside the container (output_dir mounts as /workspace/out).
 run_name: smoke_docker
 seed: 42
 

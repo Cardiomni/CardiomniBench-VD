@@ -102,7 +102,7 @@ docker build -t cardiomni:latest docker/agent
 # 3. Gray-box docker check — proves GPU injection + mounts + scoring end-to-end,
 #    without the real agent code (writes gpu.txt + a valid prediction.json):
 python -m pipeline.cli run --config configs/smoke_docker.yaml
-cat runs/smoke_docker/rerun_0/case_smoke/out/gpu.txt   # should list a GPU
+cat runs/smoke_docker/rerun_0/case_smoke/gpu.txt   # should list a GPU
 
 # 4. Real run once agent + data + keys are in place:
 export ANTHROPIC_API_KEY=...
