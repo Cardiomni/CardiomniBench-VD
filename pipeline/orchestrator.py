@@ -154,6 +154,14 @@ class Orchestrator:
             out["error"] = "no rubric available"
             return out
 
+        # Pre-extract facts from prose report if needed (for DSA-report tolerance metrics).
+        # If the agent self-reported extracted_facts, those win. Otherwise, if the judge
+        # backend is LLM/CLI (not mock), use it to parse the prose. Falls back to heuristic.
+        if "extracted_facts" not in prediction and "report" in prediction:
+            from . import report_facts as rf
+            mode = "auto" if self.cfg.judge.backend != "mock" else "heuristic"
+            prediction["extracted_facts"] = rf.extract_facts(prediction, self.judge, mode=mode)
+
         weighted_sum = 0.0
         weight_total = 0.0
         for dim in rubric.get("dimensions", []):

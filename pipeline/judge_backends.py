@@ -70,6 +70,10 @@ class Judge:
     def grade(self, prompt: str, valid_grades: Optional[List[str]] = None) -> Dict[str, Any]:
         raise NotImplementedError
 
+    def complete(self, prompt: str) -> str:
+        """Raw text completion (no grade parsing). Used for fact extraction."""
+        raise NotImplementedError
+
 
 class MockJudge(Judge):
     """Return a fixed grade without any external call. Enables offline runs."""
@@ -85,6 +89,10 @@ class MockJudge(Judge):
             "confidence": "n/a",
             "backend": "mock",
         }
+
+    def complete(self, prompt: str) -> str:
+        """Mock completion returns empty (heuristic extraction will be used as fallback)."""
+        return ""
 
 
 class CLIJudge(Judge):
@@ -119,6 +127,27 @@ class CLIJudge(Judge):
             except OSError:
                 pass
 
+    def complete(self, prompt: str) -> str:
+        """CLI complete: same as grade but returns raw stdout."""
+        import tempfile
+
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as tf:
+            tf.write(prompt)
+            prompt_file = tf.name
+        try:
+            cmd = self.cfg.command.format(prompt_file=prompt_file, model=self.cfg.model)
+            proc = subprocess.run(
+                cmd, shell=True, capture_output=True, text=True, timeout=300
+            )
+            return proc.stdout if proc.returncode == 0 else ""
+        except (subprocess.TimeoutExpired, OSError):
+            return ""
+        finally:
+            try:
+                os.unlink(prompt_file)
+            except OSError:
+                pass
+
 
 class LLMJudgeBackend(Judge):
     """Grade via an LLM chat API (Anthropic messages format by default).
@@ -131,6 +160,10 @@ class LLMJudgeBackend(Judge):
     def grade(self, prompt: str, valid_grades: Optional[List[str]] = None) -> Dict[str, Any]:
         text = self._call(prompt)
         return parse_grade_json(text, valid_grades)
+
+    def complete(self, prompt: str) -> str:
+        """Raw text completion (for fact extraction)."""
+        return self._call(prompt)
 
     def _call(self, prompt: str) -> str:
         api_key = os.environ.get(self.cfg.api_key_env)

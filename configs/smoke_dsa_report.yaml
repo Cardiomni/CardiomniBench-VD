@@ -1,0 +1,30 @@
+# Smoke test config for the narrow DSA-report task
+# Runs on case_chxc_001 (陈秀川 real case) with mock agent + mock judge
+# Proves: fact extraction (heuristic) + tolerance scoring + rubric aggregation
+
+run_name: smoke_dsa_report
+seed: 42
+
+tasks:
+  source: ../data/cases
+  case_glob: "case_chxc_001"
+  limit: 1
+
+agent:
+  backend: mock
+  name: synthetic-dsa-agent
+  model: mock-model
+  mock_prediction: ../data/cases/case_chxc_001/prediction_synthetic.json
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+rubric:
+  dimensions_file: ../rubrics/rubric_dimensions.yaml
+  default_case_rubric: ../rubrics/dsa_report_rubric.yaml
+
+output:
+  root: runs
+  reruns: 1

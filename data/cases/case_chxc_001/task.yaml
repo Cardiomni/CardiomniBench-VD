@@ -1,0 +1,253 @@
+# CardiomniBench-VD DSA Report Task - Case 陈秀川-001
+# Real case from 中山医院 data handoff (2026-07-22)
+# Task type: dsa_report (narrow DSA-only prose report evaluation)
+
+task_version: "1.0.0"
+case_id: "case_chxc_001"
+
+case_metadata:
+  creation_date: "2026-07-22"
+  annotator_primary: "张冠兆"
+  annotator_reviewer: ""  # TODO: second expert review
+  annotation_version: "0.1-draft"
+  difficulty_level: "medium"  # TODO: confirm after expert annotation
+  pathology_tags: []  # TODO: multi-vessel? CTO? heavy_calcium?
+  fusion_category: "dsa_only"
+  task_type: "dsa_report"
+  notes: |
+    First real case for the narrowed DSA-report task. 7-view coronary angiography
+    (non-中山 protocol: ~4 left + 3 right views instead of 左6右3). All views appear
+    to be pre-intervention (no stent struts/balloons visible on visual inspection).
+    Awaiting expert diagnostic conclusion from 张冠兆 to complete gold_standard.
+
+# =============================================================================
+# INPUT DATA
+# =============================================================================
+input:
+  dsa:
+    views:
+      - file_path: "dsa/IM000000.dcm"
+        modality: "XA"
+        num_frames: 26
+        positioner_primary_angle: -31.5
+        positioner_secondary_angle: -21.3
+        view_label: "RAO31/CAU21"
+        target_vessels: ["LCX", "LAD_proximal"]
+        notes: "Left system, caudal view for LCX/LAD proximal"
+
+      - file_path: "dsa/IM000001.dcm"
+        modality: "XA"
+        num_frames: 16
+        positioner_primary_angle: 45.5
+        positioner_secondary_angle: -19.2
+        view_label: "LAO45/CAU19 (spider)"
+        target_vessels: ["LM", "LAD", "LCX"]
+        notes: "Spider view — LM bifurcation, best for proximal LAD/LCX"
+
+      - file_path: "dsa/IM000002.dcm"
+        modality: "XA"
+        num_frames: 22
+        positioner_primary_angle: 0.8
+        positioner_secondary_angle: 20.2
+        view_label: "AP/CRA20"
+        target_vessels: ["LAD_mid", "LAD_distal"]
+        notes: "AP with cranial, LAD mid-distal"
+
+      - file_path: "dsa/IM000003.dcm"
+        modality: "XA"
+        num_frames: 17
+        positioner_primary_angle: -20.0
+        positioner_secondary_angle: 19.1
+        view_label: "RAO20/CRA19"
+        target_vessels: ["LAD"]
+        notes: "RAO cranial, LAD"
+
+      - file_path: "dsa/IM000004.dcm"
+        modality: "XA"
+        num_frames: 17
+        positioner_primary_angle: 44.7
+        positioner_secondary_angle: 0.7
+        view_label: "LAO45/CRA1"
+        target_vessels: ["RCA"]
+        notes: "LAO, right coronary"
+
+      - file_path: "dsa/IM000005.dcm"
+        modality: "XA"
+        num_frames: 19
+        positioner_primary_angle: 19.6
+        positioner_secondary_angle: 19.5
+        view_label: "LAO20/CRA20"
+        target_vessels: ["LAD", "RCA"]
+        notes: "LAO cranial, may show crux"
+
+      - file_path: "dsa/IM000006.dcm"
+        modality: "XA"
+        num_frames: 20
+        positioner_primary_angle: -29.7
+        positioner_secondary_angle: -1.0
+        view_label: "RAO30/CAU1"
+        target_vessels: ["RCA"]
+        notes: "RAO, right coronary proximal-mid"
+
+  clinical_context:
+    age: null  # TODO: provide if anonymization permits
+    sex: ""    # TODO
+    chief_complaint: ""  # TODO
+    risk_factors: []  # TODO
+    prior_mi: false
+    prior_pci: false
+    prior_cabg: false
+    medications: []
+
+  prohibited_resources:
+    items: ["FFR/iFR", "IVUS/OCT", "Stress test", "Prior reports"]
+    note: "Narrow DSA-report task: diagnosis only, no treatment decision required"
+
+# =============================================================================
+# EXPECTED OUTPUT
+# =============================================================================
+expected_output:
+  format: "prose_report"
+  required_sections:
+    - "dominance"
+    - "per_segment_findings"
+  optional_sections:
+    - "lesion_locations"
+
+  example_report: |
+    冠脉分布为右优势型。
+    1. 左冠状动脉:
+       (a) 左主干:未见狭窄
+       (b) 前降支:近端狭窄60%,第一对角支未见狭窄
+       (c) 回旋支:未见明显狭窄
+    2. 右冠状动脉:近段狭窄75%
+
+# =============================================================================
+# GOLD STANDARD (DRAFT — awaiting expert annotation from 张冠兆)
+# =============================================================================
+gold_standard:
+  dsa_report_facts:
+    # TODO: 张冠兆 to provide:
+    #   1. Dominance (right/left, observed from which view?)
+    #   2. Per-segment stenosis % (including explicit "未见明显狭窄" for negatives)
+    #   3. Which segments are visible/reportable in this 7-view study
+    #   4. Clinical notes on any challenging/ambiguous findings
+
+    dominance: "right"  # PLACEHOLDER — observed from IM000004/IM000006 showing large RCA reaching crux with PDA/PLB
+
+    segments:
+      # LEFT SYSTEM (best seen in IM000001 spider + IM000000 RAO/CAU)
+      - segment_id: "LM_5"
+        vessel: "LM"
+        position: ""
+        stenosis_percent: null  # TODO: expert value
+        stenosis_percent_range: []
+        notes: "TODO: 张冠兆 to annotate from spider view IM000001"
+
+      - segment_id: "LAD_6"
+        vessel: "LAD"
+        position: "proximal"
+        stenosis_percent: null  # TODO
+        stenosis_percent_range: []
+        notes: "TODO: best view IM000001 spider or IM000003 RAO/CRA"
+
+      - segment_id: "LAD_7"
+        vessel: "LAD"
+        position: "mid"
+        stenosis_percent: null  # TODO
+        stenosis_percent_range: []
+        notes: "TODO: best view IM000002 AP/CRA"
+
+      - segment_id: "LAD_8"
+        vessel: "LAD"
+        position: "distal"
+        stenosis_percent: null  # TODO
+        stenosis_percent_range: []
+        notes: "TODO: if visible in IM000002"
+
+      - segment_id: "LAD_9"
+        vessel: "D1"
+        position: ""
+        stenosis_percent: null  # TODO
+        notes: "TODO: 第一对角支，if visible"
+
+      - segment_id: "LCX_11"
+        vessel: "LCX"
+        position: "proximal"
+        stenosis_percent: null  # TODO
+        notes: "TODO: best view IM000000 RAO/CAU or IM000001 spider"
+
+      - segment_id: "LCX_13"
+        vessel: "LCX"
+        position: "distal"
+        stenosis_percent: null  # TODO
+        notes: "TODO: if visible"
+
+      # RIGHT SYSTEM (best seen in IM000006 RAO30 + IM000004 LAO45)
+      - segment_id: "RCA_1"
+        vessel: "RCA"
+        position: "proximal"
+        stenosis_percent: null  # TODO
+        stenosis_percent_range: []
+        notes: "TODO: 张冠兆 to annotate from IM000006 RAO30"
+
+      - segment_id: "RCA_2"
+        vessel: "RCA"
+        position: "mid"
+        stenosis_percent: null  # TODO
+        notes: "TODO"
+
+      - segment_id: "RCA_3"
+        vessel: "RCA"
+        position: "distal"
+        stenosis_percent: null  # TODO
+        notes: "TODO"
+
+      # Add PDA, OM, or other branches as identified by expert
+
+    clinical_tiers:
+      none_mild: "[0, 50)"
+      moderate: "[50, 70)"
+      severe: "[70, 100)"
+      occluded: 100
+
+  # Visual localization: optional, only if expert provides coordinates
+  lesion_locations: []
+    # - segment_id: "LAD_6"
+    #   file_path: "dsa/IM000001.dcm"
+    #   frame_index: 3
+    #   x: 256
+    #   y: 180
+    #   description: "TODO"
+
+  capability_boundary:
+    ffr_needed: false  # Narrow task does not require treatment decisions
+    ivus_oct_needed: false
+    notes: |
+      This narrow task evaluates diagnostic report completeness and stenosis
+      quantification accuracy only. Treatment decisions (PCI vs CABG vs medical
+      therapy) are out of scope; they belong to the full CTA+DSA fusion task.
+
+# =============================================================================
+# RUBRIC REFERENCE
+# =============================================================================
+rubric:
+  rubric_file: "rubrics/dsa_report_rubric.yaml"
+  rubric_version: "1.0.0"
+
+# =============================================================================
+# METADATA
+# =============================================================================
+metadata:
+  data_source: "Hospital case (anonymized), provided by 张冠兆"
+  ethics_approval: "TODO: confirm anonymization and ethics clearance"
+  anonymization_verified: false  # TODO: verify no PHI in DICOM headers
+  expert_consensus: false  # single expert (张冠兆); second review pending
+  solvability_verified: true  # 7 views, all diagnostic quality, no severe artifacts
+  tags: ["dsa_only", "real_case", "teaching_case", "incomplete_annotation"]
+  creation_notes: |
+    Case skeleton created 2026-07-22 by Jiaming Ma + Kiro after DSA DICOM handoff
+    and locked-in prose-report design discussion. Gold standard stenosis values
+    are PLACEHOLDERS awaiting expert annotation from 张冠兆. Once annotated, this
+    case becomes the first runnable end-to-end validation of the narrow DSA-report
+    pipeline (heuristic extraction + tolerance scoring + prose rubric).

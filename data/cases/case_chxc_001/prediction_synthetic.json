@@ -1,0 +1,17 @@
+{
+  "case_id": "case_chxc_001",
+  "report": "冠脉分布为右优势型。\n1. 左冠状动脉:\n   (a) 左主干:未见狭窄\n   (b) 前降支:近端轻度狭窄约30%,中段未见明显狭窄,第一对角支未见狭窄\n   (c) 回旋支:近段未见明显狭窄\n2. 右冠状动脉:近段中度狭窄约55%,中段未见明显狭窄",
+  "extracted_facts": {
+    "dominance": "right",
+    "segments": [
+      {"segment_id": "LM_5", "vessel": "LM", "position": "", "stenosis_percent": 0},
+      {"segment_id": "LAD_6", "vessel": "LAD", "position": "proximal", "stenosis_percent": 30},
+      {"segment_id": "LAD_7", "vessel": "LAD", "position": "mid", "stenosis_percent": 0},
+      {"segment_id": "LAD_9", "vessel": "D1", "position": "", "stenosis_percent": 0},
+      {"segment_id": "LCX_11", "vessel": "LCX", "position": "proximal", "stenosis_percent": 0},
+      {"segment_id": "RCA_1", "vessel": "RCA", "position": "proximal", "stenosis_percent": 55},
+      {"segment_id": "RCA_2", "vessel": "RCA", "position": "mid", "stenosis_percent": 0}
+    ]
+  },
+  "reasoning_trace": "SYNTHETIC PREDICTION for pipeline smoke test. Agent observed:\n- 7-view DSA study, right-dominant (large RCA reaching crux with PDA visible in IM000006)\n- Left main: patent in spider view IM000001\n- LAD: mild irregularity proximal segment in IM000001/IM000003, estimated 30%\n- LCX: no significant stenosis in IM000000 RAO/CAU caudal view\n- RCA: moderate stenosis proximal segment in IM000006 RAO30 view, estimated 55%\n\nThis is a PLACEHOLDER prediction with invented stenosis values. Replace with real agent output once gold standard is complete."
+}

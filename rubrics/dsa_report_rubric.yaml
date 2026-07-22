@@ -1,0 +1,336 @@
+# DSA Diagnostic Report Rubric (Narrow Task)
+# 6-dimension tolerance-based evaluation for prose diagnostic reports
+
+rubric_version: "1.0.0"
+case_id: "dsa_report_default"  # default rubric for all DSA-report cases
+description: |
+  Narrowed rubric for the DSA-only diagnostic report task. Evaluates a PROSE
+  report (中山模板 style) on completeness, naming accuracy, stenosis quantification
+  tolerance, dominance, anti-hallucination, and optional visual localization.
+
+  Locked-in design per 2026-07-22 alignment discussion:
+    • Output format: prose report, NOT structured form
+    • Evaluation: LLM-judge fact extraction → tolerance comparison (±10% or
+      same clinical tier) → partial credit
+    • 6 dimensions: coverage, naming, stenosis%, dominance, anti-hallucination,
+      visual localization (bonus)
+
+# =============================================================================
+# DIMENSIONS (sum of weights = 1.0)
+# =============================================================================
+dimensions:
+  # ---------------------------------------------------------------------------
+  # 1. 段覆盖率 (Segment Coverage Recall)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "segment_coverage"
+    chinese_name: "段覆盖率"
+    weight: 0.25
+    description: |
+      Did the report mention ALL vessel segments visible in the DSA study,
+      INCLUDING segments with no stenosis? A complete report explicitly states
+      "未见明显狭窄" for non-stenosed segments rather than omitting them.
+
+      Scored as: (matched_segments / total_gold_segments). Partial credit.
+
+    criteria:
+      - criterion_id: "DSA_C001"
+        description: "Segment coverage recall (报告覆盖了所有应报告的血管段，含阴性发现)"
+        evaluation_method: "automatic"
+        metric: "report_segment_coverage_recall"
+
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 25
+              description: "Coverage ≥ 95% (报告了几乎所有段，含阴性)"
+              threshold:
+                metric_range: {min: 0.95, max: 1.0}
+
+            - grade: "B"
+              points: 18
+              description: "Coverage 80-94% (遗漏1-2个次要段)"
+              threshold:
+                metric_range: {min: 0.80, max: 0.95}
+
+            - grade: "C"
+              points: 10
+              description: "Coverage 60-79% (遗漏多个段或主要血管)"
+              threshold:
+                metric_range: {min: 0.60, max: 0.80}
+
+            - grade: "F"
+              points: 0
+              description: "Coverage <60% (报告严重不完整)"
+              threshold:
+                metric_range: {min: 0.0, max: 0.60}
+
+        evidence_sources:
+          - "gold_standard.dsa_report_facts.segments"
+
+  # ---------------------------------------------------------------------------
+  # 2. 命名准确 (Naming Accuracy)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "naming_accuracy"
+    chinese_name: "命名准确"
+    weight: 0.15
+    description: |
+      Of the segments the report covered, were they named correctly per SYNTAX
+      nomenclature or canonical vessel+position pairs? E.g., "前降支近段" must
+      fold to (LAD, proximal), matching gold's LAD_6.
+
+      Scored as: (correctly_named / matched_segments). Only applies to segments
+      the report mentioned; coverage is a separate dimension.
+
+    criteria:
+      - criterion_id: "DSA_C002"
+        description: "Vessel segment naming accuracy (血管段命名准确，符合SYNTAX或标准解剖术语)"
+        evaluation_method: "automatic"
+        metric: "report_naming_accuracy"
+
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "Naming ≥ 90% correct (几乎所有段名正确)"
+              threshold:
+                metric_range: {min: 0.90, max: 1.0}
+
+            - grade: "B"
+              points: 10
+              description: "Naming 70-89% correct (个别段名错误或模糊)"
+              threshold:
+                metric_range: {min: 0.70, max: 0.90}
+
+            - grade: "C"
+              points: 5
+              description: "Naming 50-69% correct (多处段名错误)"
+              threshold:
+                metric_range: {min: 0.50, max: 0.70}
+
+            - grade: "F"
+              points: 0
+              description: "Naming <50% correct (命名系统性错误)"
+              threshold:
+                metric_range: {min: 0.0, max: 0.50}
+
+        evidence_sources:
+          - "gold_standard.dsa_report_facts.segments[].segment_id"
+          - "gold_standard.dsa_report_facts.segments[].vessel"
+
+  # ---------------------------------------------------------------------------
+  # 3. 狭窄%准确 (Stenosis Quantification Accuracy with Tolerance)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "stenosis_accuracy"
+    chinese_name: "狭窄%准确"
+    weight: 0.35
+    description: |
+      Of the segments the report covered, was the stenosis % within clinical
+      tolerance of gold? A reading is "correct" if:
+        (a) within ±10% of gold, OR
+        (b) in the same clinical tier as gold (<50 / 50-69 / 70-99 / 100)
+
+      This is the CORE metric: stenosis quantification directly drives treatment
+      decisions. Scored as: (correct_stenosis / matched_segments). Partial credit.
+
+    criteria:
+      - criterion_id: "DSA_C003"
+        description: "Stenosis quantification accuracy with ±10% or tier tolerance (狭窄百分比在容差或临床分档内)"
+        evaluation_method: "automatic"
+        metric: "report_stenosis_accuracy"
+
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 35
+              description: "Stenosis ≥ 90% within tolerance (几乎所有段狭窄%准确)"
+              threshold:
+                metric_range: {min: 0.90, max: 1.0}
+
+            - grade: "B"
+              points: 25
+              description: "Stenosis 75-89% within tolerance (多数段准确，个别误差)"
+              threshold:
+                metric_range: {min: 0.75, max: 0.90}
+
+            - grade: "C"
+              points: 15
+              description: "Stenosis 60-74% within tolerance (多处误差或跨档错误)"
+              threshold:
+                metric_range: {min: 0.60, max: 0.75}
+
+            - grade: "F"
+              points: 0
+              description: "Stenosis <60% within tolerance (狭窄定量系统性错误)"
+              threshold:
+                metric_range: {min: 0.0, max: 0.60}
+
+        evidence_sources:
+          - "gold_standard.dsa_report_facts.segments[].stenosis_percent"
+          - "gold_standard.dsa_report_facts.clinical_tiers"
+
+  # ---------------------------------------------------------------------------
+  # 4. 优势型 (Dominance)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "dominance"
+    chinese_name: "优势型"
+    weight: 0.10
+    description: |
+      Did the report correctly identify coronary dominance (right / left)?
+      Binary: 1.0 if correct or if gold has no dominance annotation, else 0.0.
+
+    criteria:
+      - criterion_id: "DSA_C004"
+        description: "Coronary dominance correct (冠脉分布优势型判断正确)"
+        evaluation_method: "automatic"
+        metric: "report_dominance_correct"
+
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "Pass"
+              points: 10
+              description: "Dominance correct or not annotated in gold"
+              threshold:
+                metric_range: {min: 1.0, max: 1.0}
+
+            - grade: "Fail"
+              points: 0
+              description: "Dominance incorrect (右优势型 判为 左优势型 or vice versa)"
+              threshold:
+                metric_range: {min: 0.0, max: 1.0}
+
+        evidence_sources:
+          - "gold_standard.dsa_report_facts.dominance"
+
+  # ---------------------------------------------------------------------------
+  # 5. 反幻觉 (Anti-Hallucination)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "anti_hallucination"
+    chinese_name: "反幻觉"
+    weight: 0.15
+    description: |
+      Did the report fabricate significant lesions (≥50% stenosis) that gold
+      does not support? Scored as: 1 - (fabricated_significant / pred_significant).
+
+      A pred lesion is "fabricated" if:
+        (a) no gold segment at that (vessel, position), OR
+        (b) gold there is <50% and pred is ≥50% with >10% error
+
+      This dimension can conceptually go negative (like source_reliability in the
+      full rubric) if fabrications are severe, but we clamp at 0 for this rubric.
+
+    criteria:
+      - criterion_id: "DSA_C005"
+        description: "No fabricated significant lesions (未编造不存在的显著病变 ≥50%)"
+        evaluation_method: "automatic"
+        metric: "report_anti_hallucination"
+        allow_negative_points: false  # clamp at 0 rather than penalizing overall score
+
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "No fabrications (所有显著病变均有金标准依据)"
+              threshold:
+                metric_range: {min: 1.0, max: 1.0}
+
+            - grade: "B"
+              points: 10
+              description: "1 minor fabrication or borderline case (1处可疑编造)"
+              threshold:
+                metric_range: {min: 0.80, max: 1.0}
+
+            - grade: "C"
+              points: 5
+              description: "2 fabrications or 1 major (多处编造或严重夸大)"
+              threshold:
+                metric_range: {min: 0.50, max: 0.80}
+
+            - grade: "F"
+              points: 0
+              description: ">2 fabrications (大量编造不存在的病变)"
+              threshold:
+                metric_range: {min: 0.0, max: 0.50}
+
+        evidence_sources:
+          - "gold_standard.dsa_report_facts.segments"
+
+  # ---------------------------------------------------------------------------
+  # 6. 视觉定位 (Visual Localization, BONUS)
+  # ---------------------------------------------------------------------------
+  - dimension_name: "visual_localization"
+    chinese_name: "视觉定位"
+    weight: 0.00  # BONUS dimension: does not count toward the base 100 score
+    description: |
+      OPTIONAL BONUS: If the expert annotates lesion locations on the angiogram
+      frames (x, y coordinates), and the agent also provides them, score the
+      spatial accuracy. This is "锦上添花" — not required, purely additive.
+
+      Distance threshold: ≤20 pixels at 512×512 resolution (~1 vessel diameter).
+      If gold provides no lesion_locations, this criterion is skipped (not scored).
+
+      Weight is 0.00 so it doesn't dilute the base score; points are ADDED to the
+      overall score after the weighted 100-point calculation.
+
+    criteria:
+      - criterion_id: "DSA_C006"
+        description: "Visual lesion localization on angiogram frames (BONUS: 在造影图上标注病变位置)"
+        evaluation_method: "llm_judge"  # or a custom spatial-distance metric if implemented
+
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "All significant lesions located within ≤20px (所有病变位置准确)"
+
+            - grade: "B"
+              points: 5
+              description: "Most lesions located, 1-2 missed or >20px off (多数准确，个别遗漏)"
+
+            - grade: "C"
+              points: 0
+              description: "No lesion locations provided or mostly incorrect (未提供或大多错误)"
+
+        evidence_sources:
+          - "gold_standard.lesion_locations"
+
+        judge_prompt_template: |
+          Compare the agent's lesion location annotations against the expert gold standard.
+
+          GOLD LESION LOCATIONS:
+          {gold_lesion_locations}
+
+          AGENT LESION LOCATIONS:
+          {pred_lesion_locations}
+
+          For each gold lesion, check if the agent marked it on the correct frame and
+          within ≤20 pixels (Euclidean distance). Grade:
+            A — all significant lesions located correctly
+            B — most located, 1-2 missed or off by >20px
+            C — no locations provided or mostly incorrect
+
+          Return JSON: {"grade": "<A|B|C>", "reasoning": "<why>", "evidence_quotes": []}
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+# Base score (weighted): 100 points
+#   - segment_coverage:    25 pts (0.25 weight)
+#   - naming_accuracy:     15 pts (0.15 weight)
+#   - stenosis_accuracy:   35 pts (0.35 weight, heaviest)
+#   - dominance:           10 pts (0.10 weight)
+#   - anti_hallucination:  15 pts (0.15 weight)
+# Bonus (additive):       +10 pts (visual_localization, if gold annotated)
+#
+# Maximum possible: 110 points (100 base + 10 bonus)
+#
+# The orchestrator computes:
+#   weighted_sum = Σ (dimension_percent * dimension_weight) for weight > 0
+#   overall_score = weighted_sum  (0-100 scale)
+#   bonus = visual_localization.points (if scored, else 0)
+#   final_display = overall_score + bonus  (may exceed 100)

@@ -22,6 +22,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from evaluation.metrics import perception_metrics as pm
 from evaluation.metrics import scoring_metrics as sm
+from . import report_facts as rf
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,81 @@ def _syntax_risk_tier_accuracy(gold: Dict[str, Any], pred: Dict[str, Any]) -> fl
     return sm.syntax_risk_tier_accuracy(p, g)
 
 
+# --- prose DSA-report tolerance metrics ---------------------------------------
+# The locked-in DSA task scores a PROSE report, not structured fields. Gold facts
+# come from a dedicated ``dsa_report_facts`` block if present, else are derived
+# from the existing ``stage1b_dsa.segments`` (segment_id + stenosis_percent).
+# Pred facts are extracted from ``prediction["report"]`` (see report_facts.py).
+# Comparison is tolerance-based (±% or same clinical tier), so these are the
+# "带容差打分" adapters — deterministic and API-free (heuristic extraction).
+
+
+def _gold_report_facts(gold: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize the gold standard into report-facts shape for comparison.
+
+    Prefers an explicit ``dsa_report_facts`` block (authored per the prose-report
+    schema). Falls back to deriving facts from ``stage1b_dsa.segments`` so legacy
+    structured gold standards still score.
+    """
+    explicit = gold.get("dsa_report_facts")
+    if isinstance(explicit, dict) and explicit.get("segments") is not None:
+        return explicit
+    segs = _gold_dsa_segments(gold)
+    dominance = (gold.get("stage0_anatomy", {}) or {}).get("dominance", "") or ""
+    return {
+        "dominance": dominance,
+        "segments": [
+            {
+                "segment_id": s.get("segment_id"),
+                "vessel": s.get("vessel"),
+                "position": s.get("position"),
+                "name": s.get("segment_name") or s.get("name"),
+                "stenosis_percent": s.get("stenosis_percent"),
+            }
+            for s in segs
+        ],
+    }
+
+
+def _fact_comparison(gold: Dict[str, Any], pred: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract pred facts + compare against gold, memoized on the pred dict.
+
+    Cached under a private key so the five sub-score adapters share one parse
+    within a single case evaluation. Keyed by id(gold) to stay correct if the
+    same pred object were ever scored against different gold (it isn't today).
+    """
+    cache = pred.setdefault("_dsa_fact_cache", {})
+    key = id(gold)
+    if key not in cache:
+        gold_facts = _gold_report_facts(gold)
+        # No judge here: the automatic path uses deterministic heuristic
+        # extraction. An orchestrator may pre-populate pred["extracted_facts"]
+        # with LLM output, which extract_facts() will prefer.
+        pred_facts = rf.extract_facts(pred, judge=None, mode="heuristic")
+        cache[key] = rf.compare_facts(gold_facts, pred_facts)
+    return cache[key]
+
+
+def _report_coverage_recall(gold: Dict[str, Any], pred: Dict[str, Any]) -> float:
+    return _fact_comparison(gold, pred)["coverage_recall"]
+
+
+def _report_naming_accuracy(gold: Dict[str, Any], pred: Dict[str, Any]) -> float:
+    return _fact_comparison(gold, pred)["naming_accuracy"]
+
+
+def _report_stenosis_accuracy(gold: Dict[str, Any], pred: Dict[str, Any]) -> float:
+    return _fact_comparison(gold, pred)["stenosis_accuracy"]
+
+
+def _report_dominance_correct(gold: Dict[str, Any], pred: Dict[str, Any]) -> float:
+    return _fact_comparison(gold, pred)["dominance_correct"]
+
+
+def _report_anti_hallucination(gold: Dict[str, Any], pred: Dict[str, Any]) -> float:
+    return _fact_comparison(gold, pred)["anti_hallucination"]
+
+
 def _binary_present(field_path: str) -> Adapter:
     """Build an adapter that scores 1.0 when a nested prediction field is non-empty.
 
@@ -162,6 +238,12 @@ REGISTRY: Dict[str, Adapter] = {
     "cadrads_per_patient_accuracy": _binary_present("comprehensive_scoring.cadrads_per_patient"),
     "syntax_score_mae": _syntax_score_mae,
     "syntax_risk_tier_accuracy": _syntax_risk_tier_accuracy,
+    # prose DSA-report tolerance metrics (the locked-in narrow task)
+    "report_segment_coverage_recall": _report_coverage_recall,
+    "report_naming_accuracy": _report_naming_accuracy,
+    "report_stenosis_accuracy": _report_stenosis_accuracy,
+    "report_dominance_correct": _report_dominance_correct,
+    "report_anti_hallucination": _report_anti_hallucination,
 }
 
 

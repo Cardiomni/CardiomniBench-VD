@@ -1,0 +1,65 @@
+[
+  {
+    "file": "IM000000",
+    "frames": 26,
+    "best_frame": 17,
+    "primary_angle": -31.5,
+    "secondary_angle": -21.3,
+    "view": "RAO31/CAU21",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000001",
+    "frames": 16,
+    "best_frame": 3,
+    "primary_angle": 45.5,
+    "secondary_angle": -19.2,
+    "view": "LAO45/CAU19",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000002",
+    "frames": 22,
+    "best_frame": 19,
+    "primary_angle": 0.8,
+    "secondary_angle": 20.2,
+    "view": "LAO1/CRA20",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000003",
+    "frames": 17,
+    "best_frame": 15,
+    "primary_angle": -20.0,
+    "secondary_angle": 19.1,
+    "view": "RAO20/CRA19",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000004",
+    "frames": 17,
+    "best_frame": 16,
+    "primary_angle": 44.7,
+    "secondary_angle": 0.7,
+    "view": "LAO45/CRA1",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000005",
+    "frames": 19,
+    "best_frame": 5,
+    "primary_angle": 19.6,
+    "secondary_angle": 19.5,
+    "view": "LAO20/CRA20",
+    "fps": 8.0
+  },
+  {
+    "file": "IM000006",
+    "frames": 20,
+    "best_frame": 0,
+    "primary_angle": -29.7,
+    "secondary_angle": -1.0,
+    "view": "RAO30/CAU1",
+    "fps": 8.0
+  }
+]
