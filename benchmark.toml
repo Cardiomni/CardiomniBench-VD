@@ -1,0 +1,92 @@
+# =============================================================================
+# CardiomniBench-VD — unified benchmark registry
+# =============================================================================
+# ONE file registers everything: the shared Docker environment, the judge, the
+# task set, and every agent under test. This is the simplified alternative to
+# BiomniBench-DA's one-task.toml-per-task layout — here the environment/judge
+# are declared once and shared across all tasks.
+#
+# Run one agent by name:
+#     python -m pipeline.cli agents --toml benchmark.toml          # list agents
+#     python -m pipeline.cli run    --toml benchmark.toml --agent mock
+#     python -m pipeline.cli run    --toml benchmark.toml --agent cardiomni
+#
+# Each [agents.<name>] table inherits [environment] (image/gpu/budgets) and may
+# override any field. This is the "换 agent / 换基座" axis; [judge] is "换 rubric";
+# [tasks] is "换任务".
+
+run_name = "cardiomni_bench"
+seed = 42
+
+# --- shared task set (换任务) ------------------------------------------------
+[tasks]
+source = "data/cases"          # directory of case_* dirs
+case_glob = "case_*"
+splits_file = "data/splits.yaml"
+# split = "test"               # uncomment to run only a named split
+# filter = { fusion_category = "fusion_required" }
+# limit = 10
+
+# --- rubric ------------------------------------------------------------------
+[rubric]
+dimensions_file = "rubrics/rubric_dimensions.yaml"
+default_case_rubric = "rubrics/examples/case_001_rubric.yaml"
+case_rubric_name = "rubric.yaml"
+
+# --- judge (换 rubric: mock | llm | cli) -------------------------------------
+[judge]
+backend = "mock"               # switch to "llm" on the server (needs api key)
+model = "claude-opus-4-8"
+temperature = 0.0
+api_key_env = "ANTHROPIC_API_KEY"
+num_judges = 1
+
+# --- shared Docker environment (inherited by every docker agent) -------------
+# Mirrors BiomniBench task.toml [environment]: image, GPU, and resource budgets
+# declared ONCE instead of per task.
+[environment]
+image = "cardiomni:latest"
+workdir = "/workspace"
+gpu = true
+gpu_device = "all"             # or "device=1,2" to pin GPUs (H20: avoid 0 if shared)
+cpus = 4
+memory_mb = 32768
+timeout_s = 3600
+
+# --- output ------------------------------------------------------------------
+[output]
+root = "runs"
+reruns = 1                     # set 3 for mean ± SD (BiomniBench convention)
+
+# =============================================================================
+# Agents under test — register as many as you like; pick one with --agent
+# =============================================================================
+
+# Offline gray-box agent: no docker, no data, no keys. Always runnable.
+[agents.mock]
+backend = "mock"
+model = "mock-model"
+
+# The main method: Cardiomni, running in the shared GPU docker image.
+# Inherits image/gpu/cpus/memory from [environment]; only declares its command.
+[agents.cardiomni]
+backend = "docker"
+model = "anthropic/claude-opus-4-8"     # 换基座: passed to the agent as {model}
+# {task_dir} mounted read-only at {workdir}/task; {output_dir} at {workdir}/out.
+command = "python -m cardiomni.run --task-spec /workspace/out/task_spec.json --task-dir /workspace/task --output /workspace/out/prediction.json --model {model}"
+[agents.cardiomni.env]
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"
+
+# A generic VLM baseline (also docker). Same environment, different command/model.
+[agents.vlm_baseline]
+backend = "docker"
+model = "gpt-4o"
+command = "python -m baselines.vlm_agent --task-spec /workspace/out/task_spec.json --output /workspace/out/prediction.json --model {model}"
+[agents.vlm_baseline.env]
+OPENAI_API_KEY = "${OPENAI_API_KEY}"
+
+# A local (non-docker) agent, e.g. a script on the host. Overrides backend.
+[agents.local_script]
+backend = "local"
+model = "anthropic/claude-opus-4-8"
+command = "python scripts/my_agent.py --task-spec {task_spec} --out {output_dir}/prediction.json --model {model}"

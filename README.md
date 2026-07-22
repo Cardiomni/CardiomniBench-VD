@@ -24,16 +24,21 @@ DSA disagree (e.g. calcium-blooming correction) — and **capability-boundary ho
 ```bash
 pip install -r requirements.txt
 
-# End-to-end gray-box run (mock agent + mock judge, one synthetic fixture case):
+# --- Unified TOML registry (recommended) ---------------------------------
+# benchmark.toml registers every agent, the shared Docker environment, judge,
+# and task set in ONE file. List agents, then run one by name:
+python -m pipeline.cli agents --toml benchmark.toml            # cardiomni, mock, ...
+python -m pipeline.cli run    --toml benchmark.toml --agent mock
+
+# --- Single YAML config (one config per run) -----------------------------
 python -m pipeline.cli run --config configs/smoke.yaml
 
-# Run the test suite (14 tests, fully offline):
+# Run the test suite (19 tests, fully offline):
 python -m pytest tests/ -q
 
 # Inspect what's available:
-python -m pipeline.cli metrics                       # registered objective metrics
-python -m pipeline.cli list  --config configs/smoke.yaml   # discovered cases
-python -m pipeline.cli validate --config configs/default.yaml
+python -m pipeline.cli metrics                             # registered objective metrics
+python -m pipeline.cli list --toml benchmark.toml --agent mock   # discovered cases
 ```
 
 A run writes results under `runs/<run_name>/`: per-case `prediction.json` +
@@ -44,9 +49,12 @@ breakdown).
 
 ## The four swap axes
 
-Everything you'd want to change lives in one YAML config. Nothing is hard-coded.
+Everything you'd want to change lives in config — either the unified
+`benchmark.toml` (all agents in one file) or a single YAML. Nothing is hard-coded.
 This mirrors BiomniBench/Harbor's `harbor run --path <task> --agent <H> --model <M>`,
-where the agent harness and the base model are independent axes.
+where the agent harness and the base model are independent axes — except we
+register the shared environment and judge **once** in `benchmark.toml` instead
+of repeating a `task.toml` per task.
 
 | You want to swap… | Config knob | Notes |
 |---|---|---|
@@ -77,9 +85,32 @@ Any agent is plugged in the same way (so results are comparable across agents):
 
 ### GPU
 
-GPU is a first-class config flag: `agent.gpu: true` makes the docker backend add
-`--gpus <device>`. See `configs/example_docker_gpu.yaml` for the deploy shape and
-`docker/agent/Dockerfile` for the CUDA base image.
+GPU is a first-class config flag: `agent.gpu: true` (or `[environment] gpu = true`
+in `benchmark.toml`) makes the docker backend add `--gpus <device>`, plus optional
+`--cpus` / `--memory` budgets. Pin specific GPUs with `gpu_device = "device=1,2"`.
+
+### Deploy on a GPU server
+
+```bash
+# 1. Clone (public repo — no auth needed)
+git clone https://github.com/Cardiomni/CardiomniBench-VD.git
+cd CardiomniBench-VD
+
+# 2. Build the agent image (needs nvidia-container-toolkit on the host)
+docker build -t cardiomni:latest docker/agent
+
+# 3. Gray-box docker check — proves GPU injection + mounts + scoring end-to-end,
+#    without the real agent code (writes gpu.txt + a valid prediction.json):
+python -m pipeline.cli run --config configs/smoke_docker.yaml
+cat runs/smoke_docker/rerun_0/case_smoke/out/gpu.txt   # should list a GPU
+
+# 4. Real run once agent + data + keys are in place:
+export ANTHROPIC_API_KEY=...
+python -m pipeline.cli run --toml benchmark.toml --agent cardiomni
+```
+
+Requires Python 3.11+ for the TOML registry (the server's `anaconda3` has it);
+on 3.7–3.10 `pip install tomli` provides the fallback.
 
 ---
 
@@ -88,17 +119,19 @@ GPU is a first-class config flag: `agent.gpu: true` makes the docker backend add
 ```
 CardiomniBench-VD/
 ├── README.md                 # this file — start here
+├── benchmark.toml            # ← unified registry: all agents + env + judge + tasks
 ├── requirements.txt          # runtime + test dependencies
 ├── conftest.py               # makes the repo root importable for pytest
 │
 ├── pipeline/                 # ← the evaluation harness (the live code)
-│   ├── config.py             #   loads/validates the run YAML (the 4 swap axes)
+│   ├── config.py             #   loads/validates a single-run YAML config
+│   ├── registry.py           #   loads benchmark.toml, merges env + one named agent
 │   ├── runner.py             #   agent backends: mock | local | docker (+ --gpus)
 │   ├── judge_backends.py     #   rubric scorers: mock | llm | cli
 │   ├── metric_registry.py    #   maps rubric metric names → evaluation/metrics fns
 │   ├── scoring.py            #   grade → points, per criterion
 │   ├── orchestrator.py       #   discover → run → score → aggregate (mean ± SD)
-│   └── cli.py                #   `python -m pipeline.cli {run,list,metrics,validate}`
+│   └── cli.py                #   `python -m pipeline.cli {run,list,agents,metrics,validate}`
 │
 ├── configs/                  # run configurations
 │   ├── default.yaml          #   real-data shape (0 cases until data is added)

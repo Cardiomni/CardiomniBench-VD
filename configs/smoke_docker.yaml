@@ -1,0 +1,43 @@
+# Docker gray-box config — verifies the FULL docker path on a GPU box:
+#   GPU injection + read-only task mount + writable output mount + scoring.
+# Does NOT need the real Cardiomni agent code — the command just proves the
+# container runs with a GPU and writes a valid prediction.json.
+#
+# On the H20 server, after `docker build -t cardiomni:latest docker/agent`:
+#   python -m pipeline.cli run --config configs/smoke_docker.yaml
+# Then inspect runs/smoke_docker/rerun_0/case_smoke/out/gpu.txt to confirm the
+# GPU was visible inside the container.
+run_name: smoke_docker
+seed: 42
+
+tasks:
+  source: ../tests/fixtures/tasks
+  case_glob: "case_*"
+
+agent:
+  backend: docker
+  name: docker-smoke
+  model: mock-model
+  image: cardiomni:latest
+  gpu: true
+  gpu_device: "device=7"        # pin to one GPU; avoids disturbing shared jobs
+  cpus: 2
+  memory_mb: 8192
+  workdir: /workspace
+  # Runs inside the container: prove the GPU is visible, then write a valid
+  # prediction.json to the mounted output dir (/workspace/out -> host output_dir).
+  command: |
+    nvidia-smi -L > /workspace/out/gpu.txt 2>&1; printf '%s' '{"case_id":"case_smoke","report":"ran inside cardiomni docker with GPU","reasoning_trace":"docker gray-box path verified"}' > /workspace/out/prediction.json
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+rubric:
+  dimensions_file: ../rubrics/rubric_dimensions.yaml
+  default_case_rubric: ../rubrics/examples/case_001_rubric.yaml
+
+output:
+  root: ../runs
+  reruns: 1

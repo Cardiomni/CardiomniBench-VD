@@ -198,6 +198,11 @@ def _wrap_docker(cfg: AgentConfig, inner: str, case_dir: Path, output_dir: Path)
     parts: List[str] = ["docker", "run", "--rm"]
     if cfg.gpu:
         parts += ["--gpus", cfg.gpu_device]
+    # Resource budgets (0 = unset), mirroring BiomniBench's task.toml [environment].
+    if cfg.cpus:
+        parts += ["--cpus", str(cfg.cpus)]
+    if cfg.memory_mb:
+        parts += ["--memory", f"{cfg.memory_mb}m"]
     # Mount the case dir (read-only) and the output dir (writable).
     parts += ["-v", f"{shlex.quote(str(case_dir))}:{cfg.workdir}/task:ro"]
     parts += ["-v", f"{shlex.quote(str(output_dir))}:{cfg.workdir}/out"]

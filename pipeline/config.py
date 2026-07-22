@@ -89,6 +89,8 @@ class AgentConfig:
     image: Optional[str] = None            # docker image (backend=docker)
     gpu: bool = False                      # request GPUs (backend=docker)
     gpu_device: str = "all"                # value for docker --gpus
+    cpus: float = 0                        # docker --cpus budget (0 = unset)
+    memory_mb: int = 0                     # docker --memory budget in MB (0 = unset)
     workdir: str = "/workspace"            # cwd inside container
     env: Dict[str, str] = field(default_factory=dict)   # extra env passed through
     extra_args: List[str] = field(default_factory=list)

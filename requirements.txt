@@ -3,6 +3,9 @@
 pyyaml>=6.0
 numpy>=1.24
 
+# TOML registry (benchmark.toml): stdlib tomllib on Python 3.11+; fallback below.
+tomli>=2.0 ; python_version < "3.11"
+
 # Testing:
 pytest>=8.0
 

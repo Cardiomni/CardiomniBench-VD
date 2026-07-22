@@ -140,6 +140,45 @@ def test_local_backend_runs_subprocess(tmp_path):
     assert res.prediction["case_id"] == "case_smoke"
 
 
+def test_registry_lists_agents():
+    from pipeline.registry import list_agents
+    names = list_agents(str(REPO / "benchmark.toml"))
+    assert "mock" in names
+    assert "cardiomni" in names
+
+
+def test_registry_loads_mock_agent():
+    from pipeline.registry import load_registry
+    cfg = load_registry(str(REPO / "benchmark.toml"), "mock")
+    assert cfg.agent.backend == "mock"
+    assert cfg.judge.backend == "mock"
+    assert cfg.tasks.source == "data/cases"
+
+
+def test_registry_agent_inherits_environment():
+    """A docker agent inherits the shared [environment] (image/gpu/budgets)."""
+    from pipeline.registry import load_registry
+    cfg = load_registry(str(REPO / "benchmark.toml"), "cardiomni")
+    assert cfg.agent.backend == "docker"
+    assert cfg.agent.image == "cardiomni:latest"   # inherited from [environment]
+    assert cfg.agent.gpu is True                    # inherited
+    assert cfg.agent.cpus == 4                       # inherited budget
+    assert cfg.agent.model == "anthropic/claude-opus-4-8"
+    assert "{model}" not in cfg.agent.command or "cardiomni.run" in cfg.agent.command
+
+
+def test_registry_unknown_agent_raises():
+    from pipeline.registry import load_registry
+    with pytest.raises(KeyError):
+        load_registry(str(REPO / "benchmark.toml"), "does_not_exist")
+
+
+def test_registry_local_agent_overrides_backend():
+    from pipeline.registry import load_registry
+    cfg = load_registry(str(REPO / "benchmark.toml"), "local_script")
+    assert cfg.agent.backend == "local"
+
+
 def test_binary_scale_grades_on_correctness():
     """Binary criteria (no threshold ranges) must award the top grade when the
     metric signals correct (>=0.5), not silently fall through to the bottom."""
