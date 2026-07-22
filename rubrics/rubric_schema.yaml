@@ -1,0 +1,209 @@
+# CardiomniBench-VD Rubric Schema
+# JSON-Schema-style definition of the rubric data structure
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: "CardiomniBench-VD Rubric"
+description: "Schema for defining evaluation rubrics for vascular diagnosis cases"
+
+type: "object"
+required:
+  - rubric_version
+  - case_id
+  - dimensions
+
+properties:
+  rubric_version:
+    type: "string"
+    description: "Version of the rubric schema (e.g., 1.0.0)"
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+
+  case_id:
+    type: "string"
+    description: "Unique identifier for the case (e.g., case_001)"
+    pattern: "^case_\\d{3,}$"
+
+  dimensions:
+    type: "array"
+    description: "List of evaluation dimensions"
+    minItems: 6
+    maxItems: 6
+    items:
+      $ref: "#/definitions/dimension"
+
+definitions:
+  dimension:
+    type: "object"
+    required:
+      - dimension_name
+      - weight
+      - criteria
+    properties:
+      dimension_name:
+        type: "string"
+        enum:
+          - "data_handling"
+          - "perception_accuracy"
+          - "fusion_reasoning"
+          - "clinical_interpretation"
+          - "scientific_reasoning"
+          - "source_reliability"
+        description: "Name of the evaluation dimension"
+
+      weight:
+        type: "number"
+        minimum: 0
+        maximum: 1
+        description: "Weight of this dimension (sum across all dimensions should equal 1.0)"
+
+      criteria:
+        type: "array"
+        description: "List of evaluation criteria within this dimension"
+        minItems: 1
+        items:
+          $ref: "#/definitions/criterion"
+
+  criterion:
+    type: "object"
+    required:
+      - criterion_id
+      - description
+      - evaluation_method
+      - grading_scale
+    properties:
+      criterion_id:
+        type: "string"
+        description: "Unique identifier for this criterion (e.g., C001)"
+        pattern: "^C\\d{3,}$"
+
+      description:
+        type: "string"
+        description: "Clear description of what is being evaluated"
+
+      evaluation_method:
+        type: "string"
+        enum:
+          - "automatic"
+          - "llm_judge"
+          - "hybrid"
+        description: |
+          - automatic: Computed via objective metrics
+          - llm_judge: Evaluated by LLM judge with expert-written rubric
+          - hybrid: Combines automatic metrics with judge assessment
+
+      metric:
+        type: "string"
+        description: "Name of the metric function (for automatic/hybrid methods)"
+        examples:
+          - "segment_f1_score"
+          - "stenosis_mae"
+          - "cadrads_accuracy"
+
+      grading_scale:
+        type: "object"
+        required:
+          - type
+          - grades
+        properties:
+          type:
+            type: "string"
+            enum:
+              - "ABC"
+              - "continuous"
+              - "binary"
+            description: "Type of grading scale"
+
+          grades:
+            type: "array"
+            description: "Grade definitions"
+            items:
+              $ref: "#/definitions/grade"
+
+      evidence_sources:
+        type: "array"
+        description: "Gold standard fields to compare against"
+        items:
+          type: "string"
+        examples:
+          - "gold_standard.stage0_anatomy.dominance"
+          - "gold_standard.stage1a_cta.segments[].stenosis_percent"
+
+      allow_negative_points:
+        type: "boolean"
+        default: false
+        description: "Whether this criterion can assign negative points (for anti-hallucination)"
+
+  grade:
+    type: "object"
+    required:
+      - grade
+      - points
+      - description
+    properties:
+      grade:
+        type: "string"
+        description: "Grade label (e.g., A, B, C, or numerical)"
+
+      points:
+        type: "number"
+        description: "Points awarded for this grade (can be negative)"
+
+      description:
+        type: "string"
+        description: "Clear definition of what qualifies for this grade"
+
+      threshold:
+        type: "object"
+        description: "Threshold conditions for automatic grading"
+        properties:
+          metric_range:
+            type: "object"
+            properties:
+              min:
+                type: "number"
+              max:
+                type: "number"
+
+          conditions:
+            type: "array"
+            items:
+              type: "string"
+            description: "Logical conditions for this grade"
+
+# Example usage (inline documentation):
+example:
+  rubric_version: "1.0.0"
+  case_id: "case_001"
+  dimensions:
+    - dimension_name: "perception_accuracy"
+      weight: 0.25
+      criteria:
+        - criterion_id: "C010"
+          description: "Vessel segment identification accuracy"
+          evaluation_method: "automatic"
+          metric: "segment_f1_score"
+          grading_scale:
+            type: "continuous"
+            grades:
+              - grade: "A"
+                points: 10
+                description: "F1 ≥ 0.95"
+                threshold:
+                  metric_range:
+                    min: 0.95
+                    max: 1.0
+              - grade: "B"
+                points: 7
+                description: "F1 ≥ 0.85"
+                threshold:
+                  metric_range:
+                    min: 0.85
+                    max: 0.95
+              - grade: "C"
+                points: 4
+                description: "F1 < 0.85"
+                threshold:
+                  metric_range:
+                    min: 0.0
+                    max: 0.85
+          evidence_sources:
+            - "gold_standard.stage0_anatomy.segments"

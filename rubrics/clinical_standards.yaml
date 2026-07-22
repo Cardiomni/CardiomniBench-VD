@@ -1,0 +1,412 @@
+# Clinical Standards for CardiomniBench-VD
+# Anchor standards that gold standard annotations and evaluation criteria reference
+
+standards:
+  # ============================================================================
+  # CAD-RADS 2.0 — Coronary CT Angiography Reporting and Data System
+  # ============================================================================
+  cadrads:
+    full_name: "CAD-RADS 2.0"
+    reference: "Cury RC et al. Radiology 2022; PMC9627235"
+    description: "Standardized reporting system for coronary CTA stenosis grading"
+
+    per_lesion_grading:
+      CAD-RADS_0:
+        stenosis_range: "0%"
+        description: "Zero stenosis"
+        clinical_action: "None"
+
+      CAD-RADS_1:
+        stenosis_range: "1-24%"
+        description: "Minimal stenosis"
+        clinical_action: "Preventive measures, risk factor modification"
+
+      CAD-RADS_2:
+        stenosis_range: "25-49%"
+        description: "Mild stenosis"
+        clinical_action: "Preventive measures, consider statin therapy"
+
+      CAD-RADS_3:
+        stenosis_range: "50-69%"
+        description: "Moderate stenosis"
+        clinical_action: "Consider functional testing (FFR-CT or stress imaging) if symptoms"
+
+      CAD-RADS_4A:
+        stenosis_range: "70-99%"
+        vessel_involvement: "One or two vessels"
+        description: "Severe stenosis"
+        clinical_action: "Invasive coronary angiography and possible revascularization"
+
+      CAD-RADS_4B:
+        stenosis_range: "≥70%"
+        vessel_involvement: "Left main or three-vessel disease"
+        description: "Severe stenosis, high-risk anatomy"
+        clinical_action: "Invasive coronary angiography, consider CABG"
+
+      CAD-RADS_5:
+        stenosis_range: "100%"
+        description: "Total occlusion"
+        clinical_action: "Invasive coronary angiography, assess viability"
+
+    per_patient_grading:
+      rule: "Per-patient CAD-RADS is the highest grade among all lesions"
+      example: "If patient has CAD-RADS 2 in RCA and CAD-RADS 4A in LAD, per-patient = CAD-RADS 4A"
+
+    modifiers:
+      N: "Non-diagnostic (motion, artifacts, heavy calcium)"
+      S: "Stent present"
+      G: "Graft present (post-CABG)"
+      V: "Vulnerability modifiers (high-risk plaque features)"
+
+    hemodynamically_significant_threshold:
+      stenosis: "≥50%"
+      vessel_diameter: "≥1.5mm"
+      note: "Per SYNTAX Score and ACC/AHA definitions"
+
+  # ============================================================================
+  # SYNTAX Score — Coronary lesion complexity scoring
+  # ============================================================================
+  syntax_score:
+    full_name: "SYNTAX Score"
+    reference: "Sianos G et al. EuroIntervention 2005; SYNTAX Trial"
+    description: "Anatomical scoring system quantifying coronary lesion complexity to guide PCI vs CABG decision"
+
+    segment_model:
+      system: "SYNTAX 16 segments (derived from AHA 1975)"
+      note: "Each segment numbered 1-16 with specific anatomical definitions and weights"
+      segments:
+        - id: 1
+          name: "RCA proximal"
+          weight: 1.0
+        - id: 2
+          name: "RCA mid"
+          weight: 1.0
+        - id: 3
+          name: "RCA distal"
+          weight: 1.0
+        - id: 4
+          name: "PDA"
+          weight: 1.0
+        - id: 5
+          name: "LM"
+          weight: 5.0
+          note: "Left main — highest weight due to critical territory"
+        - id: 6
+          name: "LAD proximal"
+          weight: 3.5
+        - id: 7
+          name: "LAD mid"
+          weight: 2.5
+        - id: 8
+          name: "LAD apical"
+          weight: 1.0
+        - id: 9
+          name: "D1"
+          weight: 1.0
+        - id: 10
+          name: "D2"
+          weight: 0.5
+        - id: 11
+          name: "LCx proximal"
+          weight: 1.5
+        - id: 12
+          name: "OM"
+          weight: 1.0
+        - id: 13
+          name: "LCx distal"
+          weight: 1.0
+        - id: 14
+          name: "Left PDA"
+          weight: 1.0
+        - id: 15
+          name: "PLB (posterolateral branch)"
+          weight: 1.0
+        - id: 16
+          name: "RI (ramus intermedius)"
+          weight: 1.0
+
+    dominance:
+      definition: "Determined by which artery gives rise to PDA"
+      types:
+        right: "PDA from RCA (70% of patients)"
+        left: "PDA from LCx (10% of patients)"
+        balanced: "Dual supply to PDA territory (20% of patients)"
+      note: "SYNTAX Score does NOT have 'balanced' — must assign right or left"
+
+    scoring_algorithm:
+      inclusion_criteria:
+        stenosis: "≥50%"
+        vessel_diameter: "≥1.5mm"
+
+      base_score_per_lesion:
+        non_occlusive: "segment_weight × 2"
+        total_occlusion: "segment_weight × 5"
+
+      complexity_modifiers:
+        cto:
+          description: "Chronic total occlusion (≥3 months)"
+          points: "+1 to +5 based on age, blunt stump, bridging collaterals, side branch, length"
+
+        bifurcation:
+          description: "Medina classification (1,1,1 / 1,0,1 / 0,1,1 etc.)"
+          points: "+1 for bifurcation, +2 for trifurcation"
+
+        aorto_ostial:
+          points: "+1"
+
+        severe_tortuosity:
+          points: "+1"
+
+        lesion_length:
+          over_20mm: "+1"
+
+        heavy_calcification:
+          points: "+1"
+
+        thrombus:
+          points: "+1"
+
+        diffuse_disease:
+          description: "Consecutive lesions with <3 disease-free segments"
+          points: "+1 per segment"
+
+    risk_stratification:
+      low: "≤22"
+      intermediate: "23-32"
+      high: "≥33"
+      clinical_implication: "High SYNTAX Score favors CABG over PCI per guidelines"
+
+  # ============================================================================
+  # TIMI Flow Grade — Thrombolysis In Myocardial Infarction flow
+  # ============================================================================
+  timi_flow:
+    full_name: "TIMI Flow Grade"
+    reference: "TIMI Study Group; Chesebro JH et al. Circulation 1987"
+    description: "Angiographic assessment of coronary blood flow"
+
+    grades:
+      TIMI_0:
+        description: "No perfusion — no antegrade flow beyond occlusion"
+
+      TIMI_1:
+        description: "Penetration without perfusion — contrast passes beyond obstruction but doesn't opacify distal bed"
+
+      TIMI_2:
+        description: "Partial perfusion — delayed antegrade flow that opacifies distal bed"
+
+      TIMI_3:
+        description: "Complete perfusion — normal antegrade flow with complete distal opacification"
+
+    clinical_significance: "TIMI 0-1 indicates severe ischemia; TIMI 2-3 better prognosis"
+
+  # ============================================================================
+  # TIMI Thrombus Grade
+  # ============================================================================
+  timi_thrombus:
+    full_name: "TIMI Thrombus Grade"
+    reference: "Gibson CM et al. Circulation 2000"
+    description: "Angiographic thrombus burden assessment"
+
+    grades:
+      G0: "No angiographic thrombus"
+      G1: "Possible thrombus (reduced contrast density, haziness)"
+      G2: "Definite thrombus, small (<1/2 vessel diameter)"
+      G3: "Moderate thrombus (1/2 to 2 vessel diameters)"
+      G4: "Large thrombus (>2 vessel diameters)"
+      G5: "Total occlusion (cannot assess thrombus size)"
+
+  # ============================================================================
+  # Rentrop Collateral Grading
+  # ============================================================================
+  rentrop:
+    full_name: "Rentrop Collateral Circulation Grade"
+    reference: "Rentrop KP et al. Circulation 1985"
+    description: "Angiographic grading of collateral flow to occluded vessel"
+
+    grades:
+      grade_0:
+        description: "No visible collaterals"
+
+      grade_1:
+        description: "Filling of side branches only"
+
+      grade_2:
+        description: "Partial filling of epicardial vessel"
+
+      grade_3:
+        description: "Complete filling of epicardial vessel"
+
+    clinical_significance: "Grade 2-3 collaterals indicate CTO revascularization may be beneficial"
+
+  # ============================================================================
+  # ACC/AHA Lesion Classification
+  # ============================================================================
+  acc_aha_lesion:
+    full_name: "ACC/AHA Lesion Morphology Classification"
+    reference: "Ryan TJ et al. JACC 1988"
+    description: "Lesion complexity classification predicting PCI success and complications"
+
+    types:
+      Type_A:
+        characteristics:
+          - "Discrete (<10mm length)"
+          - "Concentric"
+          - "Readily accessible"
+          - "Non-angulated (<45°)"
+          - "Smooth contour"
+          - "Little/no calcium"
+          - "Not ostial"
+          - "No major branch involvement"
+          - "No thrombus"
+        success_rate: ">85%"
+        complication_risk: "Low"
+
+      Type_B:
+        characteristics:
+          - "Tubular (10-20mm length)"
+          - "Eccentric"
+          - "Moderate tortuosity"
+          - "Moderate angulation (45-90°)"
+          - "Irregular contour"
+          - "Moderate calcium"
+          - "Ostial location"
+          - "Bifurcation requiring protection"
+          - "Some thrombus"
+        subdivisions:
+          B1: "One Type B characteristic"
+          B2: "≥2 Type B characteristics"
+        success_rate: "60-85%"
+        complication_risk: "Moderate"
+
+      Type_C:
+        characteristics:
+          - "Diffuse (>20mm length)"
+          - "Excessive tortuosity"
+          - "Severe angulation (>90°)"
+          - "Total occlusion >3 months"
+          - "Inability to protect major side branch"
+          - "Degenerated vein graft with friable lesion"
+        success_rate: "<60%"
+        complication_risk: "High"
+
+  # ============================================================================
+  # Agatston Calcium Score
+  # ============================================================================
+  agatston:
+    full_name: "Agatston Calcium Score"
+    reference: "Agatston AS et al. JACC 1990"
+    description: "Quantification of coronary artery calcium from non-contrast CT"
+
+    calculation:
+      threshold: "≥130 HU"
+      formula: "Area of calcification × density factor (1-4 based on peak HU)"
+      density_factors:
+        130-199_HU: 1
+        200-299_HU: 2
+        300-399_HU: 3
+        "≥400_HU": 4
+
+    risk_stratification:
+      minimal:
+        score: "0"
+        percentile: "N/A"
+        risk: "Very low"
+
+      mild:
+        score: "1-99"
+        percentile: "<75th"
+        risk: "Mildly increased"
+
+      moderate:
+        score: "100-399"
+        percentile: "75-90th"
+        risk: "Moderate"
+
+      severe:
+        score: "≥400"
+        percentile: ">90th"
+        risk: "High"
+
+    clinical_use: "Predicts cardiovascular events; guides statin therapy; note that score=0 does not exclude non-calcified plaque"
+
+  # ============================================================================
+  # High-Risk Plaque Features
+  # ============================================================================
+  high_risk_plaque:
+    full_name: "High-Risk (Vulnerable) Plaque Features on CTA"
+    reference: "Motoyama S et al. JACC 2009; Williams MC et al. JACC Cardiovasc Imaging 2019"
+    description: "CTA features associated with acute coronary syndrome risk"
+
+    features:
+      positive_remodeling:
+        definition: "Remodeling index ≥1.10"
+        calculation: "Max diameter at lesion site / reference diameter"
+        significance: "Outward vessel expansion, marker of instability"
+
+      low_attenuation_plaque:
+        definition: "<30 HU"
+        significance: "Lipid-rich necrotic core"
+
+      napkin_ring_sign:
+        definition: "Low-attenuation plaque core surrounded by higher attenuation rim"
+        significance: "Thin-cap fibroatheroma surrogate"
+
+      spotty_calcification:
+        definition: "<3mm calcification within plaque"
+        significance: "Associated with plaque rupture"
+
+    prognostic_value: "Presence of ≥2 features increases ACS risk 2-3 fold independent of stenosis severity"
+
+  # ============================================================================
+  # HU Value Thresholds for Plaque Classification
+  # ============================================================================
+  plaque_hu:
+    calcium_threshold: "≥130 HU"
+    soft_plaque_range: "<130 HU"
+    low_attenuation_plaque: "<30 HU"
+    mixed_plaque: "Contains both calcified (≥130) and non-calcified (<130) components"
+
+    note: "Heavily calcified lesions cause blooming artifact on CTA, overestimating stenosis — use DSA for quantification"
+
+  # ============================================================================
+  # Revascularization Guidelines (2021 ACC/AHA, 2024 ESC)
+  # ============================================================================
+  revascularization_guidelines:
+    left_main_disease:
+      definition: "≥50% stenosis in left main"
+      recommendation: "Revascularization (Class I); CABG preferred if SYNTAX ≥33; PCI acceptable if SYNTAX ≤22"
+
+    three_vessel_disease:
+      recommendation: "CABG preferred over PCI, especially if SYNTAX ≥23"
+
+    proximal_lad:
+      recommendation: "Revascularization for ≥70% stenosis (Class I)"
+
+    moderate_stenosis:
+      range: "50-69%"
+      recommendation: "Functional testing (FFR, iFR, or stress imaging) to guide decision (Class I)"
+      note: "DO NOT recommend revascularization based on anatomy alone for 50-69% stenosis"
+
+    cto:
+      recommendation: "Consider revascularization if viable myocardium (perfusion imaging or MRI) and adequate collaterals (Rentrop 2-3)"
+
+    acute_coronary_syndrome:
+      recommendation: "Urgent invasive strategy for STEMI (Class I); culprit lesion PCI"
+
+# ============================================================================
+# Notes on Usage
+# ============================================================================
+usage_notes:
+  for_gold_standard: |
+    Expert annotators must anchor their gold_standard.yaml values to these clinical standards.
+    For example, stenosis_percent must be quantifiable as CAD-RADS grade; lesions must be
+    classifiable per ACC/AHA morphology; SYNTAX Score must follow the official algorithm.
+
+  for_evaluation: |
+    Objective metrics (perception_metrics.py, scoring_metrics.py) compute accuracy by comparing
+    agent predictions against gold standard, both of which reference these standards.
+    LLM-judge criteria reference these standards when assessing clinical interpretation quality.
+
+  version_control: |
+    If clinical guidelines are updated (e.g., new CAD-RADS version, revised SYNTAX algorithm),
+    update this file and increment rubric_version in rubric_schema.yaml.

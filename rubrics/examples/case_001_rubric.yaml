@@ -1,0 +1,653 @@
+# Example Rubric for Case 001
+# This is an illustrative example showing the complete rubric structure with filled criteria
+# Values are for demonstration purposes only and marked as [EXAMPLE]
+
+rubric_version: "1.0.0"
+case_id: "case_001"
+case_description: "[EXAMPLE] 65-year-old male with chest pain, paired CTA+DSA showing multi-vessel disease"
+
+dimensions:
+  # ==========================================================================
+  # Dimension 1: Data Handling (weight: 0.10)
+  # ==========================================================================
+  - dimension_name: "data_handling"
+    weight: 0.10
+    criteria:
+      - criterion_id: "C001"
+        description: "Correct DICOM parsing and pixel data extraction"
+        evaluation_method: "automatic"
+        metric: "dicom_parse_success"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Successfully parsed both CTA and DSA DICOM, extracted pixel arrays and metadata"
+            - grade: "C"
+              points: 0
+              description: "Failed to parse DICOM or lost pixel data"
+
+      - criterion_id: "C002"
+        description: "Correct modality identification (CTA vs DSA)"
+        evaluation_method: "automatic"
+        metric: "modality_identification_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correctly identified CTA (Modality=CT) and DSA (Modality=XA)"
+            - grade: "C"
+              points: 0
+              description: "Confused modalities or processed wrong files"
+
+      - criterion_id: "C003"
+        description: "HU value extraction for plaque characterization"
+        evaluation_method: "automatic"
+        metric: "hu_value_available"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "HU values correctly extracted and used for plaque classification"
+            - grade: "C"
+              points: 0
+              description: "HU values not extracted or incorrectly calculated"
+
+  # ==========================================================================
+  # Dimension 2: Perception Accuracy (weight: 0.25)
+  # ==========================================================================
+  - dimension_name: "perception_accuracy"
+    weight: 0.25
+    criteria:
+      - criterion_id: "C010"
+        description: "Vessel segment identification per SYNTAX nomenclature"
+        evaluation_method: "automatic"
+        metric: "segment_f1_score"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "F1 ≥ 0.95 — excellent segment identification"
+              threshold:
+                metric_range: {min: 0.95, max: 1.0}
+            - grade: "B"
+              points: 7
+              description: "F1 ≥ 0.85 — good with minor omissions"
+              threshold:
+                metric_range: {min: 0.85, max: 0.95}
+            - grade: "C"
+              points: 4
+              description: "F1 < 0.85 — major segments missed or misnamed"
+              threshold:
+                metric_range: {min: 0.0, max: 0.85}
+        evidence_sources:
+          - "gold_standard.stage0_anatomy.segments"
+
+      - criterion_id: "C011"
+        description: "Dominance determination (right/left)"
+        evaluation_method: "automatic"
+        metric: "dominance_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correct dominance identified"
+            - grade: "C"
+              points: 0
+              description: "Incorrect dominance"
+        evidence_sources:
+          - "gold_standard.stage0_anatomy.dominance"
+
+      - criterion_id: "C012"
+        description: "Stenosis percentage quantification accuracy"
+        evaluation_method: "automatic"
+        metric: "stenosis_mae"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "MAE ≤ 10% — highly accurate quantification"
+              threshold:
+                metric_range: {min: 0, max: 10}
+            - grade: "B"
+              points: 10
+              description: "MAE ≤ 20% — acceptable for clinical use"
+              threshold:
+                metric_range: {min: 10, max: 20}
+            - grade: "C"
+              points: 5
+              description: "MAE > 20% — clinically significant error"
+              threshold:
+                metric_range: {min: 20, max: 100}
+        evidence_sources:
+          - "gold_standard.stage1a_cta.segments[].stenosis_percent"
+          - "gold_standard.stage1b_dsa.segments[].stenosis_percent"
+
+      - criterion_id: "C013"
+        description: "CAD-RADS per-lesion grading accuracy"
+        evaluation_method: "automatic"
+        metric: "cadrads_accuracy"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Accuracy ≥ 0.90 with ±1 tier tolerance"
+              threshold:
+                metric_range: {min: 0.90, max: 1.0}
+            - grade: "B"
+              points: 7
+              description: "Accuracy ≥ 0.75"
+              threshold:
+                metric_range: {min: 0.75, max: 0.90}
+            - grade: "C"
+              points: 3
+              description: "Accuracy < 0.75 or any ≥2-tier error"
+              threshold:
+                metric_range: {min: 0.0, max: 0.75}
+        evidence_sources:
+          - "gold_standard.stage1a_cta.segments[].cad_rads"
+
+      - criterion_id: "C014"
+        description: "Plaque characterization (calcified/soft/mixed)"
+        evaluation_method: "automatic"
+        metric: "plaque_classification_accuracy"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 8
+              description: "Accuracy ≥ 0.85 — correct HU-based classification"
+            - grade: "B"
+              points: 5
+              description: "Accuracy ≥ 0.70"
+            - grade: "C"
+              points: 2
+              description: "Accuracy < 0.70 — confused calcified vs soft plaque"
+        evidence_sources:
+          - "gold_standard.stage1a_cta.segments[].plaque_type"
+
+      - criterion_id: "C015"
+        description: "Agatston calcium score tier accuracy"
+        evaluation_method: "automatic"
+        metric: "agatston_tier_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 7
+              description: "Correct tier (0 / 1-99 / 100-399 / ≥400)"
+            - grade: "C"
+              points: 0
+              description: "Incorrect tier"
+        evidence_sources:
+          - "gold_standard.stage1a_cta.agatston_score"
+
+      - criterion_id: "C016"
+        description: "High-risk plaque feature identification"
+        evaluation_method: "automatic"
+        metric: "high_risk_plaque_f1"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "F1 ≥ 0.80 across all features (low attenuation, positive remodeling, napkin-ring, spotty calcium)"
+            - grade: "B"
+              points: 6
+              description: "F1 ≥ 0.60"
+            - grade: "C"
+              points: 2
+              description: "F1 < 0.60 — missed critical vulnerability markers"
+        evidence_sources:
+          - "gold_standard.stage1a_cta.segments[].high_risk_features"
+
+      - criterion_id: "C017"
+        description: "TIMI flow grade accuracy (DSA)"
+        evaluation_method: "automatic"
+        metric: "timi_flow_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correct TIMI 0-3 grading for all vessels"
+            - grade: "C"
+              points: 0
+              description: "Incorrect TIMI grading"
+        evidence_sources:
+          - "gold_standard.stage1b_dsa.segments[].timi_flow"
+
+      - criterion_id: "C018"
+        description: "Rentrop collateral grade accuracy"
+        evaluation_method: "automatic"
+        metric: "rentrop_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correct Rentrop 0-3 grading for CTO segments"
+            - grade: "C"
+              points: 0
+              description: "Incorrect or missing collateral assessment"
+        evidence_sources:
+          - "gold_standard.stage1b_dsa.collaterals[]"
+
+      - criterion_id: "C019"
+        description: "ACC/AHA lesion type classification"
+        evaluation_method: "automatic"
+        metric: "lesion_type_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correct A/B1/B2/C classification for all lesions"
+            - grade: "C"
+              points: 0
+              description: "Incorrect lesion type"
+        evidence_sources:
+          - "gold_standard.stage1b_dsa.segments[].lesion_type"
+
+  # ==========================================================================
+  # Dimension 3: Fusion Reasoning (weight: 0.20)
+  # ==========================================================================
+  - dimension_name: "fusion_reasoning"
+    weight: 0.20
+    criteria:
+      - criterion_id: "C030"
+        description: "Calcium blooming correction — preferring DSA for heavy calcium"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "Correctly identified heavy calcium (Agatston ≥400 or per-segment score ≥300) and used DSA quantification; explicitly stated blooming correction"
+            - grade: "B"
+              points: 10
+              description: "Used DSA for quantification but did not explicitly mention blooming correction"
+            - grade: "C"
+              points: 0
+              description: "Used CTA quantification despite heavy calcium, leading to overestimated stenosis"
+        evidence_sources:
+          - "gold_standard.stage2_fusion.blooming_correction_applied"
+          - "prediction.reasoning_trace"
+
+      - criterion_id: "C031"
+        description: "CTO assessment integrating CTA stump morphology + DSA collaterals"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correctly integrated CTA (occlusion duration, stump shape) with DSA (Rentrop collaterals, bridging) for CTO complexity scoring"
+            - grade: "B"
+              points: 6
+              description: "Identified CTO but incomplete integration (missing collateral or stump assessment)"
+            - grade: "C"
+              points: 0
+              description: "Missed CTO or failed to assess collaterals"
+        evidence_sources:
+          - "gold_standard.stage2_fusion.cto_segments[]"
+
+      - criterion_id: "C032"
+        description: "Vulnerable plaque + luminal stenosis integration"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correctly identified that high-risk plaque + moderate stenosis (50-69%) warrants closer monitoring or functional testing, per guidelines"
+            - grade: "B"
+              points: 6
+              description: "Identified vulnerable plaque but did not integrate with stenosis severity for risk assessment"
+            - grade: "C"
+              points: 0
+              description: "Missed vulnerable plaque or ignored its clinical significance"
+        evidence_sources:
+          - "gold_standard.stage2_fusion.vulnerable_plaque_integration"
+
+      - criterion_id: "C033"
+        description: "Culprit lesion identification (if acute event context provided)"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correctly identified culprit lesion based on plaque rupture signs, thrombus, and clinical context"
+            - grade: "B"
+              points: 5
+              description: "Identified likely culprit but reasoning incomplete"
+            - grade: "C"
+              points: 0
+              description: "Incorrect or no culprit identification despite acute context"
+        evidence_sources:
+          - "gold_standard.stage2_fusion.culprit_lesion"
+
+      - criterion_id: "C034"
+        description: "CTA-DSA discrepancy resolution"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Identified and explained any CTA-DSA discrepancies (e.g., calcium blooming, motion artifacts, different phases)"
+            - grade: "B"
+              points: 5
+              description: "Noted discrepancy but explanation incomplete"
+            - grade: "C"
+              points: 0
+              description: "Presented contradictory findings without explanation"
+        evidence_sources:
+          - "prediction.reasoning_trace"
+
+  # ==========================================================================
+  # Dimension 4: Clinical Interpretation (weight: 0.20)
+  # ==========================================================================
+  - dimension_name: "clinical_interpretation"
+    weight: 0.20
+    criteria:
+      - criterion_id: "C040"
+        description: "CAD-RADS per-patient grading"
+        evaluation_method: "automatic"
+        metric: "cadrads_per_patient_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correct per-patient CAD-RADS (highest lesion grade)"
+            - grade: "C"
+              points: 0
+              description: "Incorrect per-patient grade"
+        evidence_sources:
+          - "gold_standard.stage3_scoring.cad_rads_per_patient"
+
+      - criterion_id: "C041"
+        description: "SYNTAX Score calculation accuracy"
+        evaluation_method: "automatic"
+        metric: "syntax_score_mae"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "Absolute error ≤ 5 points — highly accurate"
+              threshold:
+                metric_range: {min: 0, max: 5}
+            - grade: "B"
+              points: 10
+              description: "Absolute error ≤ 10 points — acceptable"
+              threshold:
+                metric_range: {min: 5, max: 10}
+            - grade: "C"
+              points: 3
+              description: "Absolute error > 10 points — clinically significant miscalculation"
+              threshold:
+                metric_range: {min: 10, max: 100}
+        evidence_sources:
+          - "gold_standard.stage3_scoring.syntax_score"
+
+      - criterion_id: "C042"
+        description: "SYNTAX Score risk tier accuracy"
+        evaluation_method: "automatic"
+        metric: "syntax_risk_tier_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correct risk tier (low ≤22 / intermediate 23-32 / high ≥33)"
+            - grade: "C"
+              points: 0
+              description: "Incorrect risk tier — directly affects PCI vs CABG decision"
+        evidence_sources:
+          - "gold_standard.stage3_scoring.syntax_risk_tier"
+
+      - criterion_id: "C043"
+        description: "Revascularization recommendation guideline concordance"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 20
+              description: "Recommendation fully concordant with 2021 ACC/AHA & 2024 ESC guidelines (e.g., high SYNTAX → CABG; left main with low SYNTAX → either PCI or CABG per Heart Team)"
+            - grade: "B"
+              points: 12
+              description: "Recommendation reasonable but missing nuance (e.g., did not mention Heart Team for borderline cases)"
+            - grade: "C"
+              points: 0
+              description: "Recommendation violates guidelines (e.g., PCI for high SYNTAX three-vessel disease without justification)"
+        evidence_sources:
+          - "gold_standard.stage4_decision.revascularization_recommendation"
+          - "prediction.decision.revascularization_recommendation"
+
+      - criterion_id: "C044"
+        description: "Follow-up and medical therapy recommendations"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Appropriate follow-up interval and medical therapy (e.g., statin for CAD-RADS ≥2, dual antiplatelet post-PCI, repeat imaging for borderline lesions)"
+            - grade: "B"
+              points: 6
+              description: "Mentioned follow-up/therapy but incomplete"
+            - grade: "C"
+              points: 0
+              description: "No follow-up/therapy recommendations or inappropriate"
+        evidence_sources:
+          - "gold_standard.stage4_decision.follow_up"
+
+  # ==========================================================================
+  # Dimension 5: Scientific Reasoning (weight: 0.15)
+  # ==========================================================================
+  - dimension_name: "scientific_reasoning"
+    weight: 0.15
+    criteria:
+      - criterion_id: "C050"
+        description: "Reasoning trace coherence and logic"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "Reasoning is step-by-step, logical, and connects evidence to conclusions without jumps"
+            - grade: "B"
+              points: 10
+              description: "Generally logical but has minor reasoning gaps"
+            - grade: "C"
+              points: 3
+              description: "Reasoning is disjointed, jumps to conclusions, or contradicts itself"
+        evidence_sources:
+          - "prediction.reasoning_trace"
+
+      - criterion_id: "C051"
+        description: "Evidence citation accuracy"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "All cited SYNTAX segments, HU values, stenosis percentages, and flow grades match actual findings"
+            - grade: "B"
+              points: 6
+              description: "Minor citation errors (e.g., segment name typo) but correct overall"
+            - grade: "C"
+              points: 0
+              description: "Cited values do not match findings or fabricated evidence"
+        evidence_sources:
+          - "prediction.report"
+          - "gold_standard"
+
+      - criterion_id: "C052"
+        description: "Uncertainty expression"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Appropriately expresses uncertainty when evidence is ambiguous or limited (e.g., 'suggests', 'possible', 'recommend functional testing to confirm')"
+            - grade: "B"
+              points: 6
+              description: "Somewhat hesitant to express uncertainty"
+            - grade: "C"
+              points: 0
+              description: "Overconfident, makes definitive claims without sufficient evidence"
+        evidence_sources:
+          - "prediction.report"
+
+      - criterion_id: "C053"
+        description: "Explainability to non-specialists"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Report is understandable to a non-cardiologist physician or informed patient; technical terms explained when first used"
+            - grade: "B"
+              points: 6
+              description: "Mostly understandable but assumes too much background knowledge"
+            - grade: "C"
+              points: 0
+              description: "Jargon-heavy, cryptic, or assumes expert knowledge without explanation"
+        evidence_sources:
+          - "prediction.report"
+
+  # ==========================================================================
+  # Dimension 6: Source Reliability / Anti-Hallucination (weight: 0.10)
+  # ==========================================================================
+  - dimension_name: "source_reliability"
+    weight: 0.10
+    criteria:
+      - criterion_id: "C060"
+        description: "FFR/iFR fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correctly stated that FFR/iFR was NOT performed and is needed for 50-69% stenosis, without fabricating values"
+            - grade: "B"
+              points: 5
+              description: "Did not mention FFR/iFR need (omission but not fabrication)"
+            - grade: "C"
+              points: -20
+              description: "FABRICATED FFR or iFR values that were not in the input — critical hallucination"
+        evidence_sources:
+          - "input.clinical_context.available_tests"
+          - "prediction.report"
+
+      - criterion_id: "C061"
+        description: "IVUS/OCT fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Correctly stated IVUS/OCT not available if needed for stent optimization or detailed plaque assessment"
+            - grade: "B"
+              points: 5
+              description: "Did not mention IVUS/OCT"
+            - grade: "C"
+              points: -20
+              description: "FABRICATED IVUS/OCT findings not in input"
+        evidence_sources:
+          - "input.clinical_context.available_tests"
+          - "prediction.report"
+
+      - criterion_id: "C062"
+        description: "Myocardial viability fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "For CTO, correctly stated that viability assessment (perfusion imaging, cardiac MRI) is needed before revascularization"
+            - grade: "B"
+              points: 5
+              description: "Did not mention viability"
+            - grade: "C"
+              points: -20
+              description: "FABRICATED viability results (perfusion defects, late gadolinium enhancement, etc.) not in input"
+        evidence_sources:
+          - "input.clinical_context.available_tests"
+          - "prediction.report"
+
+      - criterion_id: "C063"
+        description: "Patient history / lab results fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Only cited patient history/labs explicitly provided in input; stated when additional history (e.g., renal function for contrast) is needed"
+            - grade: "B"
+              points: 5
+              description: "Made reasonable inferences but clearly marked as assumptions"
+            - grade: "C"
+              points: -15
+              description: "FABRICATED patient history, lab values, or comorbidities not in input"
+        evidence_sources:
+          - "input.clinical_context"
+          - "prediction.report"
+
+      - criterion_id: "C064"
+        description: "Capability boundary awareness — 50-69% intermediate stenosis"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "For 50-69% stenosis, correctly stated that functional testing (FFR-CT, FFR, stress imaging) is needed per guidelines before deciding on revascularization"
+            - grade: "B"
+              points: 5
+              description: "Mentioned need for functional testing but did not clearly link to capability boundary"
+            - grade: "C"
+              points: 0
+              description: "Made definitive revascularization recommendation for 50-69% stenosis without functional testing, violating guideline"
+        evidence_sources:
+          - "gold_standard.capability_boundary.intermediate_stenosis"
+          - "prediction.report"
+
+# =============================================================================
+# Aggregation Example
+# =============================================================================
+# Total score = Σ (dimension_weight × dimension_score)
+# where dimension_score = Σ (criterion_points) / Σ (criterion_max_points) × 100
+#
+# Example for this case (values illustrative):
+# - Data Handling: 20/20 points → 100% → 0.10 × 100 = 10.0
+# - Perception Accuracy: 68/80 points → 85% → 0.25 × 85 = 21.25
+# - Fusion Reasoning: 45/55 points → 81.8% → 0.20 × 81.8 = 16.36
+# - Clinical Interpretation: 50/65 points → 76.9% → 0.20 × 76.9 = 15.38
+# - Scientific Reasoning: 38/45 points → 84.4% → 0.15 × 84.4 = 12.66
+# - Source Reliability: 40/60 points (including one -20 penalty) → 66.7% → 0.10 × 66.7 = 6.67
+#
+# Final Score = 10.0 + 21.25 + 16.36 + 15.38 + 12.66 + 6.67 = 82.32 / 100

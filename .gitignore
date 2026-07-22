@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Pipeline outputs
+runs/
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Data — de-identified DICOM cases are added per the annotation protocol.
+# Track structure (README, splits.yaml, .gitkeep) but not raw imaging by default.
+data/cases/*/*.dcm
+data/cases/*/*.tar
+
+# Manuscript — paper/ is managed independently in its own Overleaf git repo.
+# It is intentionally not tracked here (would otherwise become an empty gitlink).
+paper/

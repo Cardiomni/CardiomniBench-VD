@@ -1,0 +1,58 @@
+# Example: real agent in a GPU docker container, LLM judge.
+# NOT runnable on this laptop (no docker); this is the shape you deploy on the
+# GPU server. Every swap axis is a config value — nothing here is hard-coded.
+#
+#   docker build -t cardiomni:latest ../docker/agent
+#   python -m pipeline.cli run --config configs/example_docker_gpu.yaml
+#
+# Swap axes, all here:
+#   换基座    -> agent.model
+#   换 agent  -> agent.command + agent.image
+#   换 rubric -> judge.backend (llm | cli)
+#   换任务    -> tasks.source / split / filter
+run_name: cardiomni_gpu
+seed: 42
+
+tasks:
+  source: ../data/cases
+  splits_file: ../data/splits.yaml
+  split: test
+  filter: {}                      # e.g. {fusion_category: fusion_required}
+  limit: null
+
+agent:
+  backend: docker
+  name: cardiomni
+  model: anthropic/claude-opus-4-8      # 换基座: passed to the agent as {model}
+  image: cardiomni:latest               # 换 agent: built from docker/agent/Dockerfile
+  gpu: true                             # request GPUs
+  gpu_device: all                       # docker --gpus value; "0" or "device=0" also valid
+  workdir: /workspace
+  # {task_dir} is mounted read-only at {workdir}/task, {output_dir} at {workdir}/out.
+  command: >-
+    python -m cardiomni.run
+    --task-spec /workspace/task/../out/task_spec.json
+    --task-dir /workspace/task
+    --output /workspace/out/prediction.json
+    --model {model} {extra_args}
+  extra_args: []
+  env:
+    ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # forwarded into the container
+  timeout_s: 3600
+
+judge:
+  backend: llm                    # 换 rubric to LLM judge
+  model: claude-opus-4-8
+  temperature: 0.0
+  api_key_env: ANTHROPIC_API_KEY
+  num_judges: 3                   # reruns for Cohen's kappa on a sample
+
+rubric:
+  dimensions_file: ../rubrics/rubric_dimensions.yaml
+  default_case_rubric: ../rubrics/examples/case_001_rubric.yaml
+  case_rubric_name: rubric.yaml
+
+output:
+  root: ../runs
+  reruns: 3                       # mean ± SD over 3 runs (BiomniBench convention)
+  save_predictions: true

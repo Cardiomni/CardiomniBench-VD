@@ -1,0 +1,115 @@
+# Data splits for CardiomniBench-VD
+# EMPTY TEMPLATE — to be populated after case collection and annotation
+
+# =============================================================================
+# Split Configuration
+# =============================================================================
+split_version: "1.0.0"
+creation_date: ""
+split_strategy: "stratified"  # Stratified by difficulty and pathology distribution
+random_seed: 42
+
+# =============================================================================
+# Split Ratios
+# =============================================================================
+ratios:
+  train: 0.60  # For agent development, few-shot learning
+  val: 0.20    # For hyperparameter tuning, judge calibration
+  test: 0.20   # Held-out for final evaluation
+
+# =============================================================================
+# Stratification Criteria
+# =============================================================================
+stratification:
+  by_difficulty:
+    easy: 0.33    # Single-vessel, no calcium, clear stenosis
+    medium: 0.34  # Multi-vessel or moderate calcium
+    hard: 0.33    # CTO, heavy calcium, bifurcation, left main
+
+  by_pathology:
+    multi_vessel: 0.40
+    cto: 0.20
+    heavy_calcium: 0.25
+    bifurcation: 0.20
+    left_main: 0.15
+    note: "Cases can have multiple tags; percentages are target minimums"
+
+  by_cadrads:
+    CAD-RADS_0-2: 0.20   # Minimal to mild
+    CAD-RADS_3: 0.25     # Moderate (needs FFR)
+    CAD-RADS_4A: 0.30    # Severe
+    CAD-RADS_4B: 0.15    # Left main or three-vessel
+    CAD-RADS_5: 0.10     # Total occlusion
+
+  by_syntax_risk:
+    low: 0.40       # ≤22
+    intermediate: 0.35  # 23-32
+    high: 0.25      # ≥33
+
+# =============================================================================
+# Train Split
+# =============================================================================
+train:
+  case_ids: []
+  # Example:
+  # - case_001
+  # - case_002
+  # - ...
+  num_cases: 0
+  difficulty_distribution: {}
+  pathology_distribution: {}
+
+# =============================================================================
+# Validation Split
+# =============================================================================
+val:
+  case_ids: []
+  num_cases: 0
+  difficulty_distribution: {}
+  pathology_distribution: {}
+  purpose: |
+    - Calibrate LLM-judge grading thresholds
+    - Validate objective metric implementations
+    - Hyperparameter tuning for agent systems
+
+# =============================================================================
+# Test Split
+# =============================================================================
+test:
+  case_ids: []
+  num_cases: 0
+  difficulty_distribution: {}
+  pathology_distribution: {}
+  purpose: |
+    - Final held-out evaluation
+    - Never used during development or judge calibration
+    - Results reported in paper
+  embargo: true  # Gold standard not released until after competition/publication
+
+# =============================================================================
+# Constraints
+# =============================================================================
+constraints:
+  - "No patient appears in multiple splits (enforce at patient level, not study level)"
+  - "Each split must have ≥1 case of each major pathology type"
+  - "Test split must have difficulty distribution matching overall corpus"
+  - "Cases with rare pathologies (e.g., left main) distributed across all splits"
+
+# =============================================================================
+# Future Multi-Institutional Extension
+# =============================================================================
+multi_institutional:
+  enabled: false
+  institutions: []
+  # Future structure:
+  # - id: institution_A
+  #   name: "Hospital A"
+  #   num_cases: 0
+  #   case_ids: []
+  # - id: institution_B
+  #   name: "Hospital B"
+  #   num_cases: 0
+  #   case_ids: []
+  cross_institution_validation:
+    enabled: false
+    note: "Train on institution A, test on institution B to assess generalization"

@@ -1,0 +1,15 @@
+# CardiomniBench-VD pipeline runtime dependencies.
+# Core (needed to run the pipeline + tests offline with mock backends):
+pyyaml>=6.0
+numpy>=1.24
+
+# Testing:
+pytest>=8.0
+
+# Optional — only for judge.backend=llm (LLM judge via API):
+#   pip install anthropic
+# anthropic>=0.40
+
+# Optional — only inside the agent Docker image (see docker/agent/Dockerfile),
+# for real DICOM ingestion. Not required to run the harness itself:
+#   pydicom pylibjpeg pylibjpeg-libjpeg gdcm

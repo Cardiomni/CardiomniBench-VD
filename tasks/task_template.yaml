@@ -1,0 +1,324 @@
+# Task Template for CardiomniBench-VD Cases
+# Clone this template for each new case, filling in gold_standard values from expert annotation
+
+task_version: "1.0.0"
+case_id: ""  # e.g., case_001
+case_metadata:
+  creation_date: ""
+  annotator_primary: ""  # Expert A (authoring)
+  annotator_reviewer: ""  # Expert B (review)
+  annotation_version: ""
+  difficulty_level: ""  # easy / medium / hard
+  pathology_tags: []  # e.g., [multi-vessel, CTO, heavy_calcium, bifurcation]
+  # Fusion category — which modality/modalities the key diagnostic conclusion REQUIRES.
+  # Drives the核心实验: agents given paired CTA+DSA should significantly outperform
+  # single-modality agents on the "fusion_required" subset (see PROPOSAL §2.3 C-class).
+  #   cta_only        — key conclusion derivable from CTA alone (e.g. Agatston, plaque type)
+  #   dsa_only        — key conclusion derivable from DSA alone (e.g. TIMI flow, Rentrop)
+  #   fusion_required — conclusion needs BOTH modalities reconciled (C-class): calcium-blooming
+  #                     correction, vulnerable-plaque-with-mild-lumen, accurate SYNTAX, CTO
+  #                     recanalizability, anatomy-function mismatch attribution
+  fusion_category: ""  # cta_only / dsa_only / fusion_required
+  # For fusion_required cases: which C-class rationale applies (free-form or from the list above).
+  fusion_rationale: ""
+
+# =============================================================================
+# INPUT DATA
+# =============================================================================
+input:
+  cta:
+    file_path: ""  # Relative path to CTA DICOM file (e.g., data/cases/case_001/cta.dcm)
+    modality: "CT"
+    study_description: ""
+    series_description: ""
+    slice_thickness_mm: null
+    pixel_spacing_mm: [null, null]
+    contrast_phase: ""  # e.g., arterial
+    reconstruction_kernel: ""
+
+  dsa:
+    file_path: ""  # Relative path to DSA DICOM file (e.g., data/cases/case_001/dsa.dcm)
+    modality: "XA"
+    study_description: ""
+    series_description: ""
+    num_frames: null
+    frame_rate: null
+    projection: ""  # e.g., RAO 30°, LAO 45°
+
+  clinical_context:
+    age: null
+    sex: ""  # M / F
+    chief_complaint: ""  # e.g., "Chest pain on exertion"
+    risk_factors: []  # e.g., [hypertension, diabetes, smoking, family_history]
+    prior_mi: false
+    prior_pci: false
+    prior_cabg: false
+    medications: []  # e.g., [aspirin, statin, beta_blocker]
+
+  prohibited_resources:
+    # Agent must NOT access these during diagnosis (test capability boundary awareness)
+    items:
+      - "FFR / iFR values"
+      - "IVUS / OCT imaging"
+      - "Stress test / perfusion imaging results"
+      - "Myocardial viability assessment"
+      - "Laboratory values (troponin, BNP, lipid panel)"
+      - "Prior diagnostic reports or clinical notes"
+    note: "Agent must recognize when these are needed and explicitly state evidence insufficiency"
+
+# =============================================================================
+# EXPECTED OUTPUT (structure for agent's diagnostic report)
+# =============================================================================
+expected_output:
+  format: "structured_json"
+  required_sections:
+    - "anatomical_localization"  # Stage 0
+    - "cta_findings"  # Stage 1a
+    - "dsa_findings"  # Stage 1b
+    - "fusion_analysis"  # Stage 2
+    - "comprehensive_scoring"  # Stage 3
+    - "clinical_decision"  # Stage 4
+    - "capability_boundary_statement"  # Explicit declaration of what cannot be determined
+
+  json_schema:
+    type: "object"
+    required:
+      - anatomical_localization
+      - cta_findings
+      - dsa_findings
+      - fusion_analysis
+      - comprehensive_scoring
+      - clinical_decision
+      - capability_boundary_statement
+    properties:
+      anatomical_localization:
+        type: "object"
+        required: [dominance, segments_identified]
+      cta_findings:
+        type: "object"
+        required: [segments, calcium_score, high_risk_plaque_features]
+      dsa_findings:
+        type: "object"
+        required: [segments, timi_flow, collaterals]
+      fusion_analysis:
+        type: "object"
+        required: [blooming_correction, cto_assessment, culprit_lesion]
+      comprehensive_scoring:
+        type: "object"
+        required: [syntax_score, cadrads_per_patient]
+      clinical_decision:
+        type: "object"
+        required: [recommendation, rationale]
+      capability_boundary_statement:
+        type: "string"
+        description: "Explicit statement of what cannot be determined without additional data"
+
+# =============================================================================
+# GOLD STANDARD (expert-annotated ground truth)
+# =============================================================================
+gold_standard:
+  # ---------------------------------------------------------------------------
+  # Stage 0: Anatomical Localization
+  # ---------------------------------------------------------------------------
+  stage0_anatomy:
+    dominance: ""  # right / left (NO balanced — per SYNTAX)
+    dominance_determination_basis: ""  # e.g., "PDA arises from RCA"
+
+    segments:
+      # List all identified SYNTAX segments with anatomical presence
+      # Format: {segment_id, segment_name, present, quality}
+      # Example:
+      # - segment_id: 1
+      #   segment_name: "RCA_proximal"
+      #   present: true
+      #   quality: "good"  # good / fair / poor / non_diagnostic
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Stage 1a: CTA Perception
+  # ---------------------------------------------------------------------------
+  stage1a_cta:
+    segments:
+      # Per-segment CTA findings
+      # Example:
+      # - segment_id: 6
+      #   segment_name: "LAD_proximal"
+      #   stenosis_percent: 75
+      #   stenosis_percent_range: [70, 80]  # Expert uncertainty range
+      #   cad_rads: "4A"
+      #   plaque_type: "mixed"  # calcified / soft / mixed
+      #   plaque_hu_range: [60, 450]
+      #   lesion_length_mm: 15
+      #   vessel_diameter_mm: 3.2
+      #   significant: true  # ≥50% and ≥1.5mm
+
+    calcium_score:
+      total_agatston: null
+      agatston_category: ""  # 0 / 1-99 / 100-399 / 400-999 / ≥1000
+      per_vessel:
+        # - vessel: "LAD"
+        #   agatston: null
+
+    high_risk_plaque_features:
+      low_attenuation_plaque: false  # <30 HU
+      positive_remodeling: false  # remodeling index ≥1.1
+      napkin_ring_sign: false
+      spotty_calcification: false  # <3mm
+      segments_with_hrp: []  # List of segment_ids
+
+    per_patient_cad_rads: ""  # 0 / 1 / 2 / 3 / 4A / 4B / 5 / N
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Stage 1b: DSA Perception
+  # ---------------------------------------------------------------------------
+  stage1b_dsa:
+    segments:
+      # Per-segment DSA findings (gold standard for stenosis quantification)
+      # Example:
+      # - segment_id: 6
+      #   segment_name: "LAD_proximal"
+      #   stenosis_percent: 73
+      #   stenosis_method: "QCA"  # Quantitative Coronary Angiography
+      #   reference_diameter_mm: 3.1
+      #   minimal_lumen_diameter_mm: 0.84
+      #   lesion_length_mm: 14
+
+    timi_flow:
+      # Per-vessel TIMI flow grade
+      # - vessel: "LAD"
+      #   timi_grade: 3  # 0 / 1 / 2 / 3
+
+    timi_thrombus:
+      # If thrombus present
+      # - vessel: ""
+      #   grade: null  # 0-5
+
+    collaterals:
+      rentrop_grade: null  # 0 / 1 / 2 / 3 (if CTO present)
+      description: ""
+
+    lesion_morphology:
+      # ACC/AHA lesion classification
+      # - segment_id: null
+      #   type: ""  # A / B1 / B2 / C
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Stage 2: Cross-Modal Fusion
+  # ---------------------------------------------------------------------------
+  stage2_fusion:
+    blooming_correction:
+      required: false
+      segments_corrected: []  # List of segment_ids where DSA used instead of CTA
+      rationale: ""
+
+    cto_assessment:
+      cto_present: false
+      cto_segments: []
+      # If CTO present:
+      # - segment_id: null
+      #   duration: ""  # e.g., ">3 months"
+      #   stump_morphology: ""  # tapered / blunt
+      #   cta_distal_vessel_visible: false
+      #   dsa_collaterals: ""
+
+    culprit_lesion:
+      identified: false
+      segment_id: null
+      rationale: ""
+
+    cta_dsa_discrepancies:
+      present: false
+      details: []
+
+    vulnerable_plaque_integration:
+      # Integration of HRP features with stenosis severity
+      high_risk_but_moderate_stenosis: []  # Segments with HRP + 50-69% stenosis
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Stage 3: Comprehensive Scoring
+  # ---------------------------------------------------------------------------
+  stage3_scoring:
+    syntax_score:
+      total_score: null
+      risk_tier: ""  # low (≤22) / intermediate (23-32) / high (≥33)
+      per_lesion_breakdown:
+        # - segment_ids: []
+        #   base_score: null
+        #   modifiers: []
+        #   subtotal: null
+
+    cadrads_per_patient: ""  # 0 / 1 / 2 / 3 / 4A / 4B / 5
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Stage 4: Clinical Decision
+  # ---------------------------------------------------------------------------
+  stage4_decision:
+    revascularization_needed: false  # true / false / uncertain
+
+    recommendation: ""  # e.g., "PCI to LAD" / "CABG" / "Medical therapy" / "Further testing"
+
+    pci_vs_cabg:
+      choice: ""  # PCI / CABG / either / neither
+      rationale: ""  # Must cite SYNTAX Score, guideline, anatomy
+
+    guideline_basis:
+      # - guideline: "2021 ACC/AHA"
+      #   recommendation_class: ""  # I / IIa / IIb / III
+      #   level_of_evidence: ""  # A / B / C
+
+    follow_up: ""
+
+    medical_therapy: []  # e.g., [aspirin, statin, beta_blocker, ACEI]
+
+    notes: ""
+
+  # ---------------------------------------------------------------------------
+  # Capability Boundary (ground truth for what SHOULD be acknowledged as unknown)
+  # ---------------------------------------------------------------------------
+  capability_boundary:
+    ffr_needed: false
+    ffr_rationale: ""  # e.g., "50-69% stenosis in segment 6 requires FFR for revascularization decision"
+
+    ivus_oct_needed: false
+    ivus_oct_rationale: ""
+
+    perfusion_viability_needed: false
+    perfusion_viability_rationale: ""
+
+    additional_history_needed: false
+    additional_history_rationale: ""
+
+    lab_values_needed: false
+    lab_values_rationale: ""
+
+    notes: ""
+
+# =============================================================================
+# RUBRIC REFERENCE
+# =============================================================================
+rubric:
+  rubric_file: ""  # Path to case-specific rubric YAML (e.g., rubrics/examples/case_001_rubric.yaml)
+  rubric_version: "1.0.0"
+
+# =============================================================================
+# METADATA
+# =============================================================================
+metadata:
+  data_source: ""  # e.g., "Hospital X, anonymized"
+  ethics_approval: ""
+  anonymization_verified: false
+  expert_consensus: false  # true if ≥2 experts agree
+  solvability_verified: false  # true if automated solvability check passed (per DrugDiscoveryBench protocol)
+
+  tags: []  # Freeform tags for filtering (e.g., [teaching_case, edge_case, typical])
+
+  creation_notes: ""

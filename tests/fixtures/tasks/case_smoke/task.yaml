@@ -1,0 +1,71 @@
+# Synthetic smoke-test case — NOT real clinical data.
+# Minimal but schema-complete so the pipeline walks every stage end-to-end.
+task_version: "1.0.0"
+case_id: case_smoke
+
+case_metadata:
+  difficulty_level: medium
+  pathology_tags: [single_vessel]
+  fusion_category: fusion_required
+  fusion_rationale: "calcium_blooming_correction"
+
+input:
+  cta:
+    file_path: cta.dcm
+    modality: CT
+  dsa:
+    file_path: dsa.dcm
+    modality: XA
+  clinical_context:
+    age: 60
+    sex: M
+    chief_complaint: "Exertional chest pain"
+    risk_factors: [hypertension]
+  prohibited_resources:
+    items: ["FFR / iFR values", "IVUS / OCT imaging"]
+
+gold_standard:
+  stage0_anatomy:
+    dominance: right
+    dominance_determination_basis: "PDA arises from RCA"
+    segments:
+      - {segment_id: 1, segment_name: RCA_proximal, present: true, quality: good}
+      - {segment_id: 6, segment_name: LAD_proximal, present: true, quality: good}
+  stage1a_cta:
+    segments:
+      - {segment_id: 6, segment_name: LAD_proximal, stenosis_percent: 75, cad_rads: "4A", plaque_type: mixed, significant: true}
+    calcium_score:
+      total_agatston: 210
+      agatston_category: "100-399"
+    high_risk_plaque_features:
+      low_attenuation_plaque: true
+      positive_remodeling: false
+      napkin_ring_sign: false
+      spotty_calcification: true
+    per_patient_cad_rads: "4A"
+  stage1b_dsa:
+    segments:
+      - {segment_id: 6, segment_name: LAD_proximal, stenosis_percent: 72, timi_flow: 3, lesion_type: B2}
+    collaterals:
+      rentrop_grade: 0
+  stage2_fusion:
+    blooming_correction:
+      required: true
+      segments_corrected: [6]
+      rationale: "Heavy calcium in LAD; DSA used for true lumen."
+    culprit_lesion:
+      identified: false
+  stage3_scoring:
+    syntax_score:
+      total_score: 8
+      risk_tier: low
+    cadrads_per_patient: "4A"
+  stage4_decision:
+    revascularization_needed: true
+    recommendation: "PCI to LAD"
+  capability_boundary:
+    ffr_needed: false
+
+metadata:
+  data_source: "synthetic"
+  anonymization_verified: true

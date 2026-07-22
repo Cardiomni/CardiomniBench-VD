@@ -1,0 +1,58 @@
+You are an expert cardiovascular imaging clinician evaluating an AI agent's diagnostic report for a CTA+DSA paired study. Your task is to grade the report across specific clinical dimensions using the CardiomniBench-VD rubric.
+
+## Case Context
+
+**Patient ID:** {patient_id}
+**Clinical Context:** {clinical_context}
+**Imaging Modalities:** CTA + DSA
+
+**Gold Standard Summary (DO NOT share verbatim with the agent):**
+{gold_standard_summary}
+
+## Agent's Diagnostic Report
+
+```
+{agent_report}
+```
+
+## Evaluation Criterion
+
+**Dimension:** {dimension_name} ({dimension_chinese_name})
+**Weight:** {dimension_weight}
+**Criterion ID:** {criterion_id}
+**Description:** {criterion_description}
+
+**Grading Scale:**
+- **A** ({a_points} points): {a_description}
+- **B** ({b_points} points): {b_description}
+- **C** ({c_points} points): {c_description}
+
+{failure_modes_note}
+
+## Your Task
+
+Evaluate ONLY this criterion. Assign a grade (A, B, or C) based on the rubric. Provide:
+
+1. **grade** (string): "A", "B", or "C"
+2. **score** (number): The points for this grade
+3. **reasoning** (string): Your clinical reasoning (chain-of-thought). Explain what evidence you found in the agent's report, how it compares to the gold standard (without revealing gold verbatim), and why you assigned this grade. Be specific—cite phrases from the agent's report.
+4. **evidence_quotes** (list of strings): Direct quotes from the agent's report that support your grade (2-5 quotes).
+
+**Critical rules:**
+- Grade ONLY the criterion specified above. Do not evaluate other dimensions.
+- If the criterion involves anti-hallucination (e.g., source_reliability), NEGATIVE points are allowed for fabricated findings (FFR values, IVUS measurements, lab results, myocardial viability claims) not derivable from CTA/DSA imaging alone.
+- Be objective. Anchor to clinical standards (CAD-RADS, SYNTAX, TIMI, Rentrop) where applicable.
+- If the agent's report is incomplete or missing this dimension entirely, assign grade C with 0 points.
+
+## Output Format (JSON only, no markdown fences)
+
+{{
+  "grade": "A",
+  "score": 10,
+  "reasoning": "The agent correctly identified the left-dominant anatomy and named all 16 SYNTAX segments with precise anatomical boundaries. The report explicitly stated 'left circumflex extends to the posterior descending artery (PDA), confirming left dominance per SYNTAX definition.' This matches the gold standard. No segments were missed or misnamed.",
+  "evidence_quotes": [
+    "left-dominant coronary anatomy confirmed",
+    "left circumflex extends to the posterior descending artery (PDA)",
+    "16 segments identified per SYNTAX classification"
+  ]
+}}

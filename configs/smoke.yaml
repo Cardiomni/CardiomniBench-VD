@@ -1,0 +1,32 @@
+# Smoke config — gray-box end-to-end run with fully offline backends.
+# Uses synthetic fixture cases; mock agent + mock judge. No docker, no API keys.
+# Run:  python -m pipeline.cli run --config configs/smoke.yaml
+run_name: smoke
+seed: 42
+
+tasks:
+  source: ../tests/fixtures/tasks
+  case_glob: "case_*"
+  splits_file: null
+  split: null
+  filter: {}
+  limit: null
+
+agent:
+  backend: mock                   # canned prediction; the fixture ships its own
+  name: mock-agent
+  model: mock-model
+  mock_prediction: null           # null -> use per-case prediction.json if present, else built-in
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+rubric:
+  dimensions_file: ../rubrics/rubric_dimensions.yaml
+  default_case_rubric: ../rubrics/examples/case_001_rubric.yaml
+
+output:
+  root: ../runs
+  reruns: 2                       # exercise mean ± SD aggregation

@@ -1,0 +1,37 @@
+# Default pipeline config — real data path (no data present yet, so run yields 0 cases).
+# Paths are resolved relative to this file's directory.
+run_name: default
+seed: 42
+
+tasks:
+  source: ../data/cases          # directory of case_* dirs
+  case_glob: "case_*"
+  splits_file: ../data/splits.yaml
+  split: null                     # e.g. "test" to run only the test split
+  filter: {}                      # e.g. {fusion_category: fusion_required}
+  limit: null
+
+agent:
+  backend: mock                   # mock | local | docker
+  name: cardiomni
+  model: mock-model               # 换基座: base model id
+  command: ""                     # 换 agent: command template (local/docker)
+  image: null
+  gpu: false
+  timeout_s: 3600
+
+judge:
+  backend: mock                   # mock | llm | cli
+  model: mock-judge
+  temperature: 0.0
+  api_key_env: ANTHROPIC_API_KEY
+
+rubric:
+  dimensions_file: ../rubrics/rubric_dimensions.yaml
+  default_case_rubric: ../rubrics/examples/case_001_rubric.yaml
+  case_rubric_name: rubric.yaml
+
+output:
+  root: ../runs
+  reruns: 1
+  save_predictions: true
