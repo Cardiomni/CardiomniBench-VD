@@ -229,6 +229,52 @@ Then run `python -m pipeline.cli run --config configs/default.yaml`.
 
 ---
 
+## Server deployment status (H20 GPU server)
+
+The benchmark is deployed on the H20 server (8× NVIDIA H20, Alibaba Cloud):
+
+**Location:** `/mnt/aliyunsb/CardiomniBench-VD` (synced with `github.com/Cardiomni/CardiomniBench-VD`)
+
+**Verification completed:**
+- ✅ Python 3.13.9 (`/opt/anaconda3/bin/python`)
+- ✅ 19 tests pass
+- ✅ Docker + GPU injection verified (container sees `NVIDIA H20`)
+- ✅ Full pipeline (discover → docker run → mount → score → aggregate) tested end-to-end
+
+**Quick check commands:**
+
+```bash
+ssh root@47.93.63.48
+cd /mnt/aliyunsb/CardiomniBench-VD
+
+# Sync to latest
+git fetch origin main && git reset --hard origin/main
+
+# List registered agents
+/opt/anaconda3/bin/python -m pipeline.cli agents --toml benchmark.toml
+
+# Docker gray-box check (proves GPU + mounts + scoring without agent code)
+/opt/anaconda3/bin/python -m pipeline.cli run --config configs/smoke_docker.yaml
+cat runs/smoke_docker/rerun_0/case_smoke/gpu.txt   # should list NVIDIA H20
+
+# Check if cardiomni:latest image build completed (runs in background via nohup)
+docker images cardiomni:latest
+tail -20 /tmp/cardiomni_build.log   # build log
+
+# Real run (once agent code + data + API keys are in place)
+export ANTHROPIC_API_KEY=sk-ant-...
+/opt/anaconda3/bin/python -m pipeline.cli run --toml benchmark.toml --agent cardiomni
+```
+
+**Next steps (agent implementation):**
+1. Write the Cardiomni agent code inside `docker/agent/` (currently the Dockerfile is just
+   a CUDA base + pydicom placeholder; the actual agent logic is not implemented yet).
+2. Add real clinical cases to `data/cases/` (currently empty, awaiting expert annotation
+   per `docs/annotation_protocol.md`).
+3. Set `ANTHROPIC_API_KEY` and run with `--judge-backend llm` for real rubric grading.
+
+---
+
 ## References
 
 - **Biomni** (Huang et al., Stanford) — general-purpose biomedical agent. `references/`
