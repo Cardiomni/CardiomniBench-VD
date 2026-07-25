@@ -21,3 +21,14 @@ data/cases/*/*.tar
 # Manuscript — paper/ is managed independently in its own Overleaf git repo.
 # It is intentionally not tracked here (would otherwise become an empty gitlink).
 paper/
+
+# Raw downloaded datasets (42G) — not source, re-downloadable via scripts/.
+.raw_data/
+
+# Specialist model weights and vendored repos (9.6G, includes nested .git
+# dirs from cloned checkpoints/repos — would become broken gitlinks if added).
+algorithms/specialist_models/
+
+# Local scratch notes / per-case working files, not part of the benchmark.
+.tmp/
+setup_models.log

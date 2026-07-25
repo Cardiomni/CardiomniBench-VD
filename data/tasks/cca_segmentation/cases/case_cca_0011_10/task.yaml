@@ -1,0 +1,31 @@
+task_version: 1.0.0
+case_id: case_cca_0011_10
+case_metadata:
+  task_type: cca_segmentation
+  source_dataset: CCA
+  source_split: train_public
+  modality_note: CTA (out of DSA-only main line; anatomy/tool source)
+  difficulty_level: medium
+input:
+  modality: CTA
+  volume:
+    file_path: image.nii.gz
+    shape:
+    - 832
+    - 832
+    - 576
+    spacing_mm:
+    - 0.5
+    - 0.5
+    - 0.5
+    note: 3D isotropic 0.5mm coronary CT angiography volume.
+expected_output:
+  format: binary_volume_mask
+  target: coronary_artery_tree (whole)
+  label_space: binary {0=background, 1=coronary}
+  metric: 'Dice (aux: clDice, Hausdorff)'
+  output_note: Write a 3D mask NIfTI same shape as input to prediction dir.
+gold_standard:
+  label_file: /mnt/aliyunsb/Cardiomni/Datasets/CCA/train/labels/10.nii.gz
+  label_space: binary 0/1
+  note: 3D voxel mask, same shape as input; foreground ~0.1%.

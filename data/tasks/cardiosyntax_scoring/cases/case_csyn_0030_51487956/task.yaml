@@ -1,0 +1,78 @@
+task_version: 1.0.0
+case_id: case_csyn_0030_51487956
+case_metadata:
+  task_type: cardiosyntax_scoring
+  source_dataset: CardioSYNTAX
+  source_split: part9_ondisk
+  study_uid: 1.3.46.670589.28.26690171363123020221209064251487956
+  num_views: 6
+  difficulty_level: low
+input:
+  modality: XCA_cine
+  views:
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065214961642.2.2.npy
+    artery: LCA
+    positioner_primary_angle: -6.1
+    positioner_secondary_angle: -19.02
+    shape:
+    - 41
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065417439652.2.2.npy
+    artery: RCA
+    positioner_primary_angle: 24.43
+    positioner_secondary_angle: 0.1
+    shape:
+    - 40
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065205707640.2.2.npy
+    artery: LCA
+    positioner_primary_angle: -1.5
+    positioner_secondary_angle: 1.98
+    shape:
+    - 36
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065232408645.2.2.npy
+    artery: LCA
+    positioner_primary_angle: -18.16
+    positioner_secondary_angle: 15.52
+    shape:
+    - 49
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065256170649.2.2.npy
+    artery: LCA
+    positioner_primary_angle: 23.67
+    positioner_secondary_angle: -16.08
+    shape:
+    - 35
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221209065242908647.2.2.npy
+    artery: LCA
+    positioner_primary_angle: 20.48
+    positioner_secondary_angle: 15.4
+    shape:
+    - 46
+    - 512
+    - 512
+  note: Multiple projection cine videos (.npy, frames x 512 x 512, uint8). Combine
+    views for a study-level readout.
+expected_output:
+  format: structured_json
+  targets:
+    syntax_score: float (total anatomical SYNTAX score)
+    syntax_left: float
+    syntax_right: float
+    dominance: one of {"right","left"} (SYNTAX has no co-dominant)
+  metric: MAE / RMSE / R2 for scores; accuracy for dominance
+  note: Study-level prediction from all views combined.
+gold_standard:
+  syntax_score: 0.0
+  syntax_left: 0.0
+  syntax_right: 0.0
+  dominance: right
+  bypass: false
+  risk_band: low

@@ -1,3 +1,7 @@
+> ⚠️ **定位已更新 (2026-07-22)**：本文件的"定位/主张"部分已作废（旧 CTA-DSA 融合框架）。当前权威规划见 `/mnt/aliyunsb/Cardiomni/PROPOSAL.md`。本文件的**工程实现描述仍然有效**，可继续复用。
+
+---
+
 # CardiomniBench-VD — Server Handoff
 
 **Location:** `/mnt/aliyunsb/CardiomniBench-VD` (H20 8×NVIDIA H20 server, Alibaba Cloud)  

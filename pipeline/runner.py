@@ -49,33 +49,37 @@ class AgentResult:
 
 
 def build_task_spec(case_id: str, case: Dict[str, Any]) -> Dict[str, Any]:
-    """Build the agent-facing task spec: inputs + clinical context, NO gold standard.
+    """Build the agent-facing task spec: inputs + context, NO gold standard.
 
     Keeps the agent blind to the answer (BiomniBench forbids reading the source),
-    while giving it everything a clinician would have: the DICOM file paths, the
-    clinical context, and the required output sections.
+    while giving it everything a clinician would have. The whole ``input`` block
+    is forwarded verbatim so any task type (ARCADE segment/stenosis, CCA vessel
+    segmentation, CardioSYNTAX scoring, DSA report) can declare its own input
+    shape (image / volume / video paths + acquisition metadata) without a schema
+    change here. ``task_type``, ``expected_output``, and any per-case
+    ``instructions`` are passed through when present.
     """
     inp = case.get("input", {}) or {}
     expected = case.get("expected_output", {}) or {}
-    return {
+    meta = case.get("case_metadata", {}) or {}
+    spec = {
         "case_id": case_id,
-        "input": {
-            "cta": inp.get("cta", {}),
-            "dsa": inp.get("dsa", {}),
-            "clinical_context": inp.get("clinical_context", {}),
-            "prohibited_resources": inp.get("prohibited_resources", {}),
-        },
-        "expected_output": {
-            "format": expected.get("format", "structured_json"),
-            "required_sections": expected.get("required_sections", []),
-        },
-        "instructions": (
+        "task_type": meta.get("task_type") or case.get("task_type", "dsa_report"),
+        "input": inp,
+        "expected_output": expected,
+    }
+    # Per-case instructions win; otherwise fall back to the DSA-report default so
+    # existing DSA cases keep their anti-fabrication guidance.
+    if case.get("instructions"):
+        spec["instructions"] = case["instructions"]
+    elif spec["task_type"] == "dsa_report":
+        spec["instructions"] = (
             "Produce a structured coronary diagnostic report as prediction.json. "
             "Populate every required section. Do NOT fabricate FFR/IVUS/OCT, "
             "perfusion, viability, lab, or history data that is not provided — "
             "state explicitly when such data would be needed."
-        ),
-    }
+        )
+    return spec
 
 
 def _render_command(template: str, mapping: Dict[str, str]) -> str:

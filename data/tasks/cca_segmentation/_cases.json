@@ -1,0 +1,26 @@
+{
+  "task": "cca_segmentation",
+  "n": 20,
+  "cases": [
+    "case_cca_0001_0",
+    "case_cca_0002_1",
+    "case_cca_0003_2",
+    "case_cca_0004_3",
+    "case_cca_0005_4",
+    "case_cca_0006_5",
+    "case_cca_0007_6",
+    "case_cca_0008_7",
+    "case_cca_0009_8",
+    "case_cca_0010_9",
+    "case_cca_0011_10",
+    "case_cca_0012_11",
+    "case_cca_0013_12",
+    "case_cca_0014_13",
+    "case_cca_0015_14",
+    "case_cca_0016_15",
+    "case_cca_0017_16",
+    "case_cca_0018_17",
+    "case_cca_0019_18",
+    "case_cca_0020_19"
+  ]
+}

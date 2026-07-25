@@ -1,0 +1,94 @@
+task_version: 1.0.0
+case_id: case_arcade_seg_0027_229-3
+case_metadata:
+  task_type: arcade_segmentation
+  source_dataset: ARCADE
+  source_split: test
+  source_file: 229-3.png
+  coco_id: 145
+  difficulty_level: hard
+  coronary_system: LCA
+input:
+  modality: XCA
+  image:
+    file_path: image.png
+    width: 512
+    height: 512
+    note: Single 2D angiography frame, grayscale.
+expected_output:
+  format: instance_list
+  target: coronary_artery_segments
+  label_space: SYNTAX segment ids (1..16 + a/b/c subsegments), 25 classes
+  fields_per_instance:
+  - label
+  - bbox_xywh_norm
+  - mask
+  metric: mean_F1_per_image (ARCADE official)
+gold_standard:
+  instances:
+  - instance_id: 0
+    label: '13'
+    bbox_xywh_norm:
+    - 0.361152
+    - 0.44418
+    - 0.301152
+    - 0.353809
+  - instance_id: 1
+    label: '15'
+    bbox_xywh_norm:
+    - 0.329043
+    - 0.77582
+    - 0.281797
+    - 0.077383
+  - instance_id: 2
+    label: '5'
+    bbox_xywh_norm:
+    - 0.430234
+    - 0.208203
+    - 0.124453
+    - 0.062285
+  - instance_id: 3
+    label: '6'
+    bbox_xywh_norm:
+    - 0.548633
+    - 0.203125
+    - 0.155664
+    - 0.04627
+  - instance_id: 4
+    label: '11'
+    bbox_xywh_norm:
+    - 0.537695
+    - 0.254297
+    - 0.120898
+    - 0.193281
+  - instance_id: 5
+    label: 14b
+    bbox_xywh_norm:
+    - 0.435937
+    - 0.716445
+    - 0.491953
+    - 0.189531
+  - instance_id: 6
+    label: '14'
+    bbox_xywh_norm:
+    - 0.661543
+    - 0.502734
+    - 0.127324
+    - 0.185215
+  - instance_id: 7
+    label: '9'
+    bbox_xywh_norm:
+    - 0.655859
+    - 0.239063
+    - 0.281562
+    - 0.338223
+  - instance_id: 8
+    label: 12b
+    bbox_xywh_norm:
+    - 0.585293
+    - 0.315254
+    - 0.32082
+    - 0.346973
+  num_instances: 9
+  masks_file: ../../gold/case_arcade_seg_0027_229-3/masks.npz
+  mask_note: bbox-local binary masks, one array per instance_id

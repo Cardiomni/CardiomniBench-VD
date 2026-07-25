@@ -1,0 +1,52 @@
+task_version: 1.0.0
+case_id: case_arcade_sten_0020_137-6
+case_metadata:
+  task_type: arcade_stenosis
+  source_dataset: ARCADE
+  source_split: test
+  source_file: 137-6.png
+  coco_id: 43
+  difficulty_level: medium
+  coronary_system: LCA
+input:
+  modality: XCA
+  image:
+    file_path: image.png
+    width: 512
+    height: 512
+    note: Single 2D angiography frame, grayscale.
+expected_output:
+  format: instance_list
+  target: stenosis_regions
+  label_space: single class "stenosis" (location only, no percent)
+  fields_per_instance:
+  - label
+  - bbox_xywh_norm
+  - mask
+  metric: mean_F1_per_image (ARCADE official)
+gold_standard:
+  instances:
+  - instance_id: 0
+    label: stenosis
+    bbox_xywh_norm:
+    - 0.406113
+    - 0.118906
+    - 0.135215
+    - 0.130312
+  - instance_id: 1
+    label: stenosis
+    bbox_xywh_norm:
+    - 0.533984
+    - 0.244922
+    - 0.108008
+    - 0.197227
+  - instance_id: 2
+    label: stenosis
+    bbox_xywh_norm:
+    - 0.63457
+    - 0.47793
+    - 0.059844
+    - 0.077637
+  num_instances: 3
+  masks_file: ../../gold/case_arcade_sten_0020_137-6/masks.npz
+  mask_note: bbox-local binary masks, one array per instance_id

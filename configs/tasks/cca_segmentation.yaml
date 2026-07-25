@@ -1,0 +1,31 @@
+# Task config: CCA 3D coronary vessel segmentation (CTA)
+# Input  = one 3D CTA volume (image.nii.gz)
+# Output = binary 3D mask (same shape), 1=coronary
+# Metric = Dice (aux clDice/Hausdorff) — scoring wired later
+# NOTE: CTA, out of the DSA-only main line; anatomy/tool-training source.
+run_name: cca_segmentation
+seed: 42
+
+tasks:
+  source: ../../data/tasks/cca_segmentation/cases
+  case_glob: "case_*"
+
+agent:
+  backend: mock
+  name: mock-cca-seg
+  model: mock-model
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+output:
+  root: ../../runs
+  reruns: 1
+
+rubric:
+  # Rubric is DEFERRED (input/output focus). This points at the existing
+  # dimensions file only so the orchestrator initializes; not used for scoring yet.
+  dimensions_file: ../../rubrics/rubric_dimensions.yaml
+  default_case_rubric: null

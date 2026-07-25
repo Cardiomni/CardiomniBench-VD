@@ -1,0 +1,102 @@
+task_version: 1.0.0
+case_id: case_csyn_0027_55212843
+case_metadata:
+  task_type: cardiosyntax_scoring
+  source_dataset: CardioSYNTAX
+  source_split: part9_ondisk
+  study_uid: 1.3.46.670589.28.26690171363123020221128062455212843
+  num_views: 9
+  difficulty_level: low
+input:
+  modality: XCA_cine
+  views:
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128063441257129.2.2.npy
+    artery: RCA
+    positioner_primary_angle: 26.13
+    positioner_secondary_angle: -2.07
+    shape:
+    - 42
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128064108780150.2.2.npy
+    artery: LCA
+    positioner_primary_angle: -22.25
+    positioner_secondary_angle: 24.31
+    shape:
+    - 57
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128064035522146.2.2.npy
+    artery: LCA
+    positioner_primary_angle: -0.6
+    positioner_secondary_angle: -19.5
+    shape:
+    - 41
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128063311357123.2.2.npy
+    artery: RCA
+    positioner_primary_angle: 26.13
+    positioner_secondary_angle: -2.07
+    shape:
+    - 35
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128063840398138.2.2.npy
+    artery: RCA
+    positioner_primary_angle: 28.03
+    positioner_secondary_angle: -2.16
+    shape:
+    - 56
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128064129091152.2.2.npy
+    artery: LCA
+    positioner_primary_angle: 29.34
+    positioner_secondary_angle: -24.05
+    shape:
+    - 52
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128064054834148.2.2.npy
+    artery: LCA
+    positioner_primary_angle: 2.43
+    positioner_secondary_angle: 31.82
+    shape:
+    - 61
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128064025195144.2.2.npy
+    artery: LCA
+    positioner_primary_angle: 5.51
+    positioner_secondary_angle: 1.81
+    shape:
+    - 55
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221128063850147140.2.2.npy
+    artery: RCA
+    positioner_primary_angle: 20.58
+    positioner_secondary_angle: 14.53
+    shape:
+    - 57
+    - 512
+    - 512
+  note: Multiple projection cine videos (.npy, frames x 512 x 512, uint8). Combine
+    views for a study-level readout.
+expected_output:
+  format: structured_json
+  targets:
+    syntax_score: float (total anatomical SYNTAX score)
+    syntax_left: float
+    syntax_right: float
+    dominance: one of {"right","left"} (SYNTAX has no co-dominant)
+  metric: MAE / RMSE / R2 for scores; accuracy for dominance
+  note: Study-level prediction from all views combined.
+gold_standard:
+  syntax_score: 0.0
+  syntax_left: 0.0
+  syntax_right: 0.0
+  dominance: null
+  bypass: false
+  risk_band: low

@@ -1,0 +1,59 @@
+task_version: 1.0.0
+case_id: case_arcade_seg_0006_139-5
+case_metadata:
+  task_type: arcade_segmentation
+  source_dataset: ARCADE
+  source_split: test
+  source_file: 139-5.png
+  coco_id: 45
+  difficulty_level: easy
+  coronary_system: RCA
+input:
+  modality: XCA
+  image:
+    file_path: image.png
+    width: 512
+    height: 512
+    note: Single 2D angiography frame, grayscale.
+expected_output:
+  format: instance_list
+  target: coronary_artery_segments
+  label_space: SYNTAX segment ids (1..16 + a/b/c subsegments), 25 classes
+  fields_per_instance:
+  - label
+  - bbox_xywh_norm
+  - mask
+  metric: mean_F1_per_image (ARCADE official)
+gold_standard:
+  instances:
+  - instance_id: 0
+    label: '2'
+    bbox_xywh_norm:
+    - 0.286602
+    - 0.328125
+    - 0.102461
+    - 0.259453
+  - instance_id: 1
+    label: '4'
+    bbox_xywh_norm:
+    - 0.610547
+    - 0.502734
+    - 0.302852
+    - 0.137969
+  - instance_id: 2
+    label: '3'
+    bbox_xywh_norm:
+    - 0.353516
+    - 0.502656
+    - 0.257695
+    - 0.085137
+  - instance_id: 3
+    label: '1'
+    bbox_xywh_norm:
+    - 0.377383
+    - 0.241328
+    - 0.180625
+    - 0.095039
+  num_instances: 4
+  masks_file: ../../gold/case_arcade_seg_0006_139-5/masks.npz
+  mask_note: bbox-local binary masks, one array per instance_id

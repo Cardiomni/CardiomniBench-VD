@@ -1,0 +1,30 @@
+# Task config: ARCADE coronary artery SEGMENT segmentation (25 SYNTAX classes)
+# Input  = one 512x512 XCA frame (image.png)
+# Output = instance list {label(SYNTAX seg id), bbox, mask}
+# Metric = mean F1 per image (ARCADE official) — scoring wired later (rubric deferred)
+run_name: arcade_segmentation
+seed: 42
+
+tasks:
+  source: ../../data/tasks/arcade_segmentation/cases
+  case_glob: "case_*"
+
+agent:
+  backend: mock
+  name: mock-arcade-seg
+  model: mock-model
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+output:
+  root: ../../runs
+  reruns: 1
+
+rubric:
+  # Rubric is DEFERRED (input/output focus). This points at the existing
+  # dimensions file only so the orchestrator initializes; not used for scoring yet.
+  dimensions_file: ../../rubrics/rubric_dimensions.yaml
+  default_case_rubric: null

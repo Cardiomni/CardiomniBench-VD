@@ -1,0 +1,32 @@
+# Task config: CardioSYNTAX study-level SYNTAX score + dominance
+# Input  = N multi-view XCA cine videos (videos/*.npy) + per-view angles/artery
+# Output = {syntax_score, syntax_left, syntax_right, dominance}
+# Metric = MAE/RMSE/R2 (scores), accuracy (dominance) — scoring wired later
+# NOTE: input format matches Cardiomni's real input (multi-view cines).
+#       SYNTAX score is a future-work label per the pivot.
+run_name: cardiosyntax_scoring
+seed: 42
+
+tasks:
+  source: ../../data/tasks/cardiosyntax_scoring/cases
+  case_glob: "case_*"
+
+agent:
+  backend: mock
+  name: mock-csyn
+  model: mock-model
+
+judge:
+  backend: mock
+  model: mock-judge
+  mock_grade: A
+
+output:
+  root: ../../runs
+  reruns: 1
+
+rubric:
+  # Rubric is DEFERRED (input/output focus). This points at the existing
+  # dimensions file only so the orchestrator initializes; not used for scoring yet.
+  dimensions_file: ../../rubrics/rubric_dimensions.yaml
+  default_case_rubric: null
