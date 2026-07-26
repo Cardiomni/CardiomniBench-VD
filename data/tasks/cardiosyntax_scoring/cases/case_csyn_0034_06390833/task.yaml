@@ -1,0 +1,95 @@
+task_version: 1.0.0
+case_id: case_csyn_0034_06390833
+case_metadata:
+  task_type: cardiosyntax_scoring
+  source_dataset: CardioSYNTAX
+  source_subset: three_expert_60
+  study_uid: 1.3.46.670589.28.26690171363123020221013054106390833
+  num_views: 6
+  has_dominance_label: true
+  difficulty_level: low
+input:
+  modality: XCA_cine
+  views:
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013054908720071.2.2.npy
+    artery: LCA
+    artery_prob: 0.0002003788249567151
+    positioner_primary_angle: 2.25
+    positioner_secondary_angle: -21.01
+    shape:
+    - 40
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013055118541084.2.2.npy
+    artery: RCA
+    artery_prob: 0.9993205070495605
+    positioner_primary_angle: -1.39
+    positioner_secondary_angle: 6.75
+    shape:
+    - 39
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013054859095069.2.2.npy
+    artery: LCA
+    artery_prob: 0.0004810551181435585
+    positioner_primary_angle: 0.28
+    positioner_secondary_angle: 2.79
+    shape:
+    - 35
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013054926129074.2.2.npy
+    artery: LCA
+    artery_prob: 1.2780800489053945e-06
+    positioner_primary_angle: -20.18
+    positioner_secondary_angle: 17.63
+    shape:
+    - 41
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013055108963082.2.2.npy
+    artery: RCA
+    artery_prob: 0.999823272228241
+    positioner_primary_angle: 20.26
+    positioner_secondary_angle: 3.84
+    shape:
+    - 35
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020221013054936144076.2.2.npy
+    artery: LCA
+    artery_prob: 0.001263091224245727
+    positioner_primary_angle: 7.94
+    positioner_secondary_angle: 20.93
+    shape:
+    - 40
+    - 512
+    - 512
+  note: Multiple projection cine videos (.npy, frames x 512 x 512, uint8). Combine
+    views for a study-level readout.
+expected_output:
+  format: structured_json
+  targets:
+    syntax_score: float (total anatomical SYNTAX score)
+    syntax_left: float
+    syntax_right: float
+    dominance: one of {"right","left"} (SYNTAX has no co-dominant)
+  metric: MAE / RMSE / R2 for scores; accuracy for dominance
+  aux_metric: fraction of predictions within the 3-expert [min,max] band
+  note: Study-level prediction from all views combined.
+gold_standard:
+  syntax_score: 0.0
+  syntax_left: 0.0
+  syntax_right: 0.0
+  dominance: right
+  bypass: false
+  risk_band: low
+  expert_scores:
+  - 0.0
+  - 0.0
+  - 2.0
+  expert_median: 0.0
+  expert_mean: 0.67
+  expert_min: 0.0
+  expert_max: 2.0
+  expert_spread: 2.0

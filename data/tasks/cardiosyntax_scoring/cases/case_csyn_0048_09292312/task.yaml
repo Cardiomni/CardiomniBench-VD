@@ -1,0 +1,149 @@
+task_version: 1.0.0
+case_id: case_csyn_0048_09292312
+case_metadata:
+  task_type: cardiosyntax_scoring
+  source_dataset: CardioSYNTAX
+  source_subset: three_expert_60
+  study_uid: 1.3.46.670589.28.26690171363123020230328063809292312
+  num_views: 12
+  has_dominance_label: false
+  difficulty_level: high
+input:
+  modality: XCA_cine
+  views:
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064426082113.2.2.npy
+    artery: LCA
+    artery_prob: 0.002803296083584428
+    positioner_primary_angle: -19.48
+    positioner_secondary_angle: -20.53
+    shape:
+    - 46
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064851648138.2.2.npy
+    artery: LCA
+    artery_prob: 0.1376475840806961
+    positioner_primary_angle: 2.35
+    positioner_secondary_angle: -5.52
+    shape:
+    - 65
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064710626126.2.2.npy
+    artery: RCA
+    artery_prob: 0.9999493360519409
+    positioner_primary_angle: 32.85
+    positioner_secondary_angle: -6.67
+    shape:
+    - 110
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064407347111.2.2.npy
+    artery: LCA
+    artery_prob: 1.5562629414489493e-05
+    positioner_primary_angle: -1.13
+    positioner_secondary_angle: -3.09
+    shape:
+    - 52
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064446081115.2.2.npy
+    artery: LCA
+    artery_prob: 0.007370226085186005
+    positioner_primary_angle: 9.89
+    positioner_secondary_angle: -32.39
+    shape:
+    - 59
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064914002140.2.2.npy
+    artery: LCA
+    artery_prob: 0.07501883059740067
+    positioner_primary_angle: 19.38
+    positioner_secondary_angle: 9.93
+    shape:
+    - 71
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328065050034147.2.2.npy
+    artery: RCA
+    artery_prob: 0.7451485991477966
+    positioner_primary_angle: -3.3
+    positioner_secondary_angle: 0.03
+    shape:
+    - 67
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064943626142.2.2.npy
+    artery: LCA
+    artery_prob: 0.03075960837304592
+    positioner_primary_angle: -32.0
+    positioner_secondary_angle: 13.77
+    shape:
+    - 66
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064803336133.2.2.npy
+    artery: RCA
+    artery_prob: 0.76826411485672
+    positioner_primary_angle: 2.35
+    positioner_secondary_angle: -5.52
+    shape:
+    - 78
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064526530119.2.2.npy
+    artery: LCA
+    artery_prob: 4.106962660443969e-05
+    positioner_primary_angle: -10.71
+    positioner_secondary_angle: 9.99
+    shape:
+    - 34
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328065215145151.2.2.npy
+    artery: RCA
+    artery_prob: 0.8152027130126953
+    positioner_primary_angle: -3.3
+    positioner_secondary_angle: 0.03
+    shape:
+    - 46
+    - 512
+    - 512
+  - file_path: videos/1.3.46.670589.28.26690171363123020230328064506532117.2.2.npy
+    artery: LCA
+    artery_prob: 0.0020040750969201326
+    positioner_primary_angle: 24.88
+    positioner_secondary_angle: 9.69
+    shape:
+    - 48
+    - 512
+    - 512
+  note: Multiple projection cine videos (.npy, frames x 512 x 512, uint8). Combine
+    views for a study-level readout.
+expected_output:
+  format: structured_json
+  targets:
+    syntax_score: float (total anatomical SYNTAX score)
+    syntax_left: float
+    syntax_right: float
+    dominance: one of {"right","left"} (SYNTAX has no co-dominant)
+  metric: MAE / RMSE / R2 for scores; accuracy for dominance
+  aux_metric: fraction of predictions within the 3-expert [min,max] band
+  note: Study-level prediction from all views combined.
+gold_standard:
+  syntax_score: 39.0
+  syntax_left: 34.0
+  syntax_right: 5.0
+  dominance: null
+  bypass: true
+  risk_band: high
+  expert_scores:
+  - 39.0
+  - 31.5
+  - 9.0
+  expert_median: 31.5
+  expert_mean: 26.5
+  expert_min: 9.0
+  expert_max: 39.0
+  expert_spread: 30.0

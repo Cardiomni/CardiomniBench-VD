@@ -1,0 +1,391 @@
+# Example Rubric for Case 001 (DSA-only evaluation)
+# Aligned with PROPOSAL.md §3 — single-modality coronary angiography
+# Values are illustrative examples marked as [EXAMPLE]
+
+rubric_version: "2.0.0"
+case_id: "case_001"
+case_description: "[EXAMPLE] 65-year-old male with chest pain, DSA showing multi-vessel disease"
+
+dimensions:
+  # ==========================================================================
+  # Dimension 1: Data Handling (weight: 0.10)
+  # ==========================================================================
+  - dimension_name: "data_handling"
+    weight: 0.10
+    criteria:
+      - criterion_id: "C001"
+        description: "Correct DSA DICOM parsing and multi-frame XA sequence extraction"
+        evaluation_method: "automatic"
+        metric: "dicom_parse_success"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Successfully parsed DSA DICOM (Modality=XA), extracted all frame sequences and metadata"
+            - grade: "C"
+              points: 0
+              description: "Failed to parse DICOM or lost frame data"
+
+      - criterion_id: "C002"
+        description: "Projection angle identification from DICOM metadata"
+        evaluation_method: "automatic"
+        metric: "modality_identification_accuracy"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correctly identified projection angles (RAO/LAO/cranial/caudal) for each series"
+            - grade: "C"
+              points: 0
+              description: "Failed to extract projection metadata or misidentified angles"
+
+      - criterion_id: "C003"
+        description: "Data quality assessment (contrast opacification, motion artifacts)"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correctly identified adequate contrast opacification and assessed motion artifacts"
+            - grade: "B"
+              points: 3
+              description: "Partial quality assessment"
+            - grade: "C"
+              points: 0
+              description: "Did not assess data quality or missed critical artifacts"
+
+  # ==========================================================================
+  # Dimension 2: Stenosis Accuracy (weight: 0.25)
+  # ==========================================================================
+  - dimension_name: "stenosis_accuracy"
+    weight: 0.25
+    criteria:
+      - criterion_id: "C010"
+        description: "Stenosis percentage quantification accuracy"
+        evaluation_method: "automatic"
+        metric: "stenosis_mae"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 15
+              description: "MAE ≤ 10% — highly accurate quantification with ±10% clinical tolerance"
+              threshold:
+                metric_range: {min: 0, max: 10}
+            - grade: "B"
+              points: 10
+              description: "MAE ≤ 20% — acceptable for clinical use"
+              threshold:
+                metric_range: {min: 10, max: 20}
+            - grade: "C"
+              points: 5
+              description: "MAE > 20% — clinically significant error"
+              threshold:
+                metric_range: {min: 20, max: 100}
+        evidence_sources:
+          - "gold_standard.dsa_report.segments[].stenosis_percent"
+
+      - criterion_id: "C011"
+        description: "Multi-angle projection selection for stenosis verification"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Used orthogonal or multiple projections to verify stenosis and avoid overlap/foreshortening"
+            - grade: "B"
+              points: 6
+              description: "Used multiple projections but did not explicitly verify orthogonality"
+            - grade: "C"
+              points: 0
+              description: "Relied on single projection, risking overlap artifacts"
+        evidence_sources:
+          - "prediction.reasoning_trace"
+          - "prediction.projections_used"
+
+  # ==========================================================================
+  # Dimension 3: Segment Coverage (weight: 0.15)
+  # ==========================================================================
+  - dimension_name: "segment_coverage"
+    weight: 0.15
+    criteria:
+      - criterion_id: "C020"
+        description: "SYNTAX 16-segment systematic coverage"
+        evaluation_method: "automatic"
+        metric: "segment_f1_score"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "F1 ≥ 0.95 — excellent segment coverage including explicit negatives"
+              threshold:
+                metric_range: {min: 0.95, max: 1.0}
+            - grade: "B"
+              points: 7
+              description: "F1 ≥ 0.85 — good with minor omissions"
+              threshold:
+                metric_range: {min: 0.85, max: 0.95}
+            - grade: "C"
+              points: 4
+              description: "F1 < 0.85 — major segments missed"
+              threshold:
+                metric_range: {min: 0.0, max: 0.85}
+        evidence_sources:
+          - "gold_standard.dsa_report.segments"
+
+      - criterion_id: "C021"
+        description: "Explicit reporting of normal segments (no stenosis)"
+        evaluation_method: "automatic"
+        metric: "report_segment_coverage_recall"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Reported all normal segments with explicit '未见明显狭窄' or 'no significant stenosis'"
+            - grade: "C"
+              points: 0
+              description: "Only reported diseased segments, omitted normal segments"
+        evidence_sources:
+          - "gold_standard.dsa_report.segments"
+          - "prediction.report"
+
+  # ==========================================================================
+  # Dimension 4: Naming Accuracy (weight: 0.10)
+  # ==========================================================================
+  - dimension_name: "naming_accuracy"
+    weight: 0.10
+    criteria:
+      - criterion_id: "C030"
+        description: "SYNTAX nomenclature compliance"
+        evaluation_method: "automatic"
+        metric: "report_naming_accuracy"
+        grading_scale:
+          type: "continuous"
+          grades:
+            - grade: "A"
+              points: 8
+              description: "Accuracy ≥ 0.95 — correct SYNTAX segment names (LM, prox/mid/distal LAD, D1/D2, OM1/OM2, PDA/PLV)"
+              threshold:
+                metric_range: {min: 0.95, max: 1.0}
+            - grade: "B"
+              points: 5
+              description: "Accuracy ≥ 0.85"
+              threshold:
+                metric_range: {min: 0.85, max: 0.95}
+            - grade: "C"
+              points: 2
+              description: "Accuracy < 0.85 or used non-standard abbreviations"
+              threshold:
+                metric_range: {min: 0.0, max: 0.85}
+        evidence_sources:
+          - "gold_standard.dsa_report.segments[].name"
+
+      - criterion_id: "C031"
+        description: "Bifurcation lesion Medina classification"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 2
+              description: "Correctly applied Medina classification (e.g., 1,1,1 or 0,1,0) for bifurcation lesions"
+            - grade: "B"
+              points: 1
+              description: "Identified bifurcation but did not use Medina"
+            - grade: "C"
+              points: 0
+              description: "Missed bifurcation or incorrect Medina"
+        evidence_sources:
+          - "gold_standard.dsa_report.bifurcation_lesions"
+
+  # ==========================================================================
+  # Dimension 5: Dominance Correctness (weight: 0.05)
+  # ==========================================================================
+  - dimension_name: "dominance_correctness"
+    weight: 0.05
+    criteria:
+      - criterion_id: "C040"
+        description: "Coronary dominance determination (right/left/codominant)"
+        evaluation_method: "automatic"
+        metric: "report_dominance_correct"
+        grading_scale:
+          type: "binary"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correct dominance identified based on PDA and PLV supply"
+            - grade: "C"
+              points: 0
+              description: "Incorrect dominance or not stated"
+        evidence_sources:
+          - "gold_standard.dsa_report.dominance"
+
+  # ==========================================================================
+  # Dimension 6: Reasoning Traceability (weight: 0.20)
+  # ==========================================================================
+  - dimension_name: "reasoning_traceability"
+    weight: 0.20
+    criteria:
+      - criterion_id: "C050"
+        description: "Four-stage SOP pipeline adherence (Stage 1→2→3→4)"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "Clear four-stage flow: Stage 1 dominance → Stage 2 systematic scan → Stage 3 projection selection → Stage 4 lesion assessment"
+            - grade: "B"
+              points: 6
+              description: "Followed stages but skipped explicit Stage 2 systematic scan"
+            - grade: "C"
+              points: 0
+              description: "Jumped directly to lesion assessment without systematic scan"
+        evidence_sources:
+          - "prediction.reasoning_trace"
+
+      - criterion_id: "C051"
+        description: "Evidence citation accuracy (frame numbers, projections, measurements)"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 10
+              description: "All cited frame numbers, projection angles, and measurement values match actual findings"
+            - grade: "B"
+              points: 6
+              description: "Minor citation errors (e.g., off-by-one frame number) but correct overall"
+            - grade: "C"
+              points: 0
+              description: "Cited values do not match findings or fabricated evidence"
+        evidence_sources:
+          - "prediction.report"
+          - "gold_standard"
+
+      - criterion_id: "C052"
+        description: "Tool invocation rationality (SAM segmentation / QCA diameter / DeepCORO second opinion)"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Tool calls justified and appropriate (e.g., SAM for complex bifurcation, DeepCORO for borderline stenosis)"
+            - grade: "B"
+              points: 3
+              description: "Tool calls correct but rationale not explicit"
+            - grade: "C"
+              points: 0
+              description: "Tool calls without rationale or unnecessary (e.g., complex segmentation on obvious normal segment)"
+        evidence_sources:
+          - "prediction.tool_calls"
+          - "prediction.reasoning_trace"
+
+      - criterion_id: "C053"
+        description: "Uncertainty expression for borderline findings"
+        evaluation_method: "llm_judge"
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Appropriately expressed uncertainty for borderline stenosis (45-55%, 65-75%) or ambiguous projections"
+            - grade: "B"
+              points: 3
+              description: "Some uncertainty expression but could be clearer"
+            - grade: "C"
+              points: 0
+              description: "Overconfident, no uncertainty expression for borderline findings"
+        evidence_sources:
+          - "prediction.report"
+
+  # ==========================================================================
+  # Dimension 7: Anti-Hallucination (weight: 0.15)
+  # ==========================================================================
+  - dimension_name: "anti_hallucination"
+    weight: 0.15
+    criteria:
+      - criterion_id: "C060"
+        description: "FFR/iFR fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "automatic"
+        metric: "report_anti_hallucination"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correctly stated that FFR/iFR was NOT performed and is needed for 50-69% stenosis"
+            - grade: "B"
+              points: 2
+              description: "Did not mention FFR/iFR need (omission but not fabrication)"
+            - grade: "C"
+              points: -20
+              description: "FABRICATED FFR or iFR values — critical hallucination"
+        evidence_sources:
+          - "input.available_tests"
+          - "prediction.report"
+
+      - criterion_id: "C061"
+        description: "CTA/IVUS/OCT fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Correctly stated CTA/IVUS/OCT not available; did not fabricate plaque characteristics (calcified/soft) unavailable in DSA"
+            - grade: "B"
+              points: 2
+              description: "Did not mention CTA/IVUS/OCT"
+            - grade: "C"
+              points: -20
+              description: "FABRICATED CTA calcium scores, IVUS/OCT findings, or plaque characteristics not in DSA input"
+        evidence_sources:
+          - "input.available_tests"
+          - "prediction.report"
+
+      - criterion_id: "C062"
+        description: "Patient history / lab results fabrication check [NEGATIVE POINTS POSSIBLE]"
+        evaluation_method: "llm_judge"
+        allow_negative_points: true
+        grading_scale:
+          type: "ABC"
+          grades:
+            - grade: "A"
+              points: 5
+              description: "Only cited patient history/labs explicitly provided in input"
+            - grade: "B"
+              points: 2
+              description: "Made reasonable inferences but clearly marked as assumptions"
+            - grade: "C"
+              points: -15
+              description: "FABRICATED patient history, lab values, or comorbidities not in input"
+        evidence_sources:
+          - "input.clinical_context"
+          - "prediction.report"
+
+# =============================================================================
+# Aggregation Example (DSA-only, 7 dimensions)
+# =============================================================================
+# Total score = Σ (dimension_weight × dimension_score)
+# where dimension_score = Σ (criterion_points) / Σ (criterion_max_points) × 100
+#
+# Example for this case (values illustrative):
+# - Data Handling: 18/20 points → 90% → 0.10 × 90 = 9.0
+# - Stenosis Accuracy: 22/25 points → 88% → 0.25 × 88 = 22.0
+# - Segment Coverage: 13/15 points → 87% → 0.15 × 87 = 13.05
+# - Naming Accuracy: 8/10 points → 80% → 0.10 × 80 = 8.0
+# - Dominance Correctness: 5/5 points → 100% → 0.05 × 100 = 5.0
+# - Reasoning Traceability: 26/30 points → 87% → 0.20 × 87 = 17.4
+# - Anti-Hallucination: 15/15 points (no penalties) → 100% → 0.15 × 100 = 15.0
+#
+# Final Score = 9.0 + 22.0 + 13.05 + 8.0 + 5.0 + 17.4 + 15.0 = 89.45 / 100

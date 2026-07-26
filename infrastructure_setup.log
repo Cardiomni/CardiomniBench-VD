@@ -1,0 +1,166 @@
+===================================================================
+CardiomniBench-VD Infrastructure Setup
+Date: 2026-07-25 16:37:41
+===================================================================
+
+>>> Task 1: Converting datasets to benchmark format...
+
+[1.1] Converting CardioSYNTAX (50 cases)...
+✓ Converted case_syntax_049 (SYNTAX=42.0, high)
+✓ Converted case_syntax_050 (SYNTAX=0.0, no_cad)
+✓ Updated data/splits.yaml
+
+✓ Conversion complete: 50/50 cases
+
+[1.2] Checking ARCADE dependencies...
+✓ Dependencies OK
+
+[1.3] Converting ARCADE (10 samples for testing)...
+            print(f"✓ Updated {splits_file}")
+  File "/mnt/aliyunsb/Cardiomni/CardiomniBench-VD/scripts/convert_arcade.py", line 85, in ARCADEConverter
+    def decode_mask(self, mask_binary: str) -> np.ndarray:
+                                               ^^
+NameError: name 'np' is not defined
+
+>>> Task 2: Verifying case structure...
+
+Total cases: 51
+
+Sample case structure (case_syntax_001):
+总用量 4.0K
+-rw-r--r-- 1 root root 511 7月  25 16:37 task.yaml
+
+Task YAML preview:
+case_id: case_syntax_001
+case_metadata:
+  creation_date: '2026-07-25'
+  difficulty_level: easy
+  notes: 'CardioSYNTAX category: 0分 (正常)'
+  source_dataset: CardioSYNTAX
+  study_uid: 1.3.46.670589.28.26690171363123020220907045521257151
+  task_type: syntax_scoring
+gold_standard:
+  dominance: right
+  lesions: []
+  syntax_score:
+    left: 0.0
+    right: 0.0
+    risk_tier: no_cad
+    total: 0.0
+input:
+  clinical_context:
+    lca_video_count: 5
+    rca_video_count: 3
+
+>>> Task 3: Verifying baseline agents...
+
+Registered agents in benchmark.toml:
+cardiomni
+local_script
+mock
+sam_vmnet
+syntax_calculator
+vlm_baseline
+
+Validating syntax_calculator agent:
+OK: config valid (agent=local, judge=mock)
+
+Validating sam_vmnet agent:
+OK: config valid (agent=local, judge=mock)
+
+>>> Task 4: Running pipeline smoke tests...
+
+[4.1] Running pytest...
+============================= test session starts ==============================
+platform linux -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0 -- /opt/anaconda3/bin/python
+cachedir: .pytest_cache
+rootdir: /mnt/aliyunsb/Cardiomni/CardiomniBench-VD
+plugins: zarr-3.2.1, fast-array-utils-1.4.1, langsmith-0.9.7, anyio-4.10.0
+collecting ... collected 19 items / 17 deselected / 2 selected
+
+tests/test_pipeline_smoke.py::test_discovers_smoke_case PASSED           [ 50%]
+tests/test_pipeline_smoke.py::test_mock_agent_writes_prediction PASSED   [100%]
+
+======================= 2 passed, 17 deselected in 0.12s =======================
+
+[4.2] Running mock agent on syntax cases...
+INFO pipeline.orchestrator: run complete: /mnt/aliyunsb/Cardiomni/CardiomniBench-VD/runs/cardiomni_bench/summary.json
+{
+  "run_name": "cardiomni_bench",
+  "num_cases": 51,
+  "overall_mean": 54.83,
+  "overall_sd": 0.0,
+  "per_dimension_mean": {
+    "perception_accuracy": 32.5,
+    "data_handling": 75.0,
+    "source_reliability": 50.0,
+    "fusion_reasoning": 58.2,
+    "scientific_reasoning": 62.2,
+    "clinical_interpretation": 66.2
+  }
+}
+
+>>> Task 5: Verifying metrics registry...
+
+Registered metrics:
+agatston_tier_accuracy
+cadrads_accuracy
+cadrads_per_patient_accuracy
+dicom_parse_success
+dominance_accuracy
+high_risk_plaque_f1
+hu_value_available
+lesion_type_accuracy
+modality_identification_accuracy
+plaque_classification_accuracy
+rentrop_accuracy
+report_anti_hallucination
+report_dominance_correct
+report_naming_accuracy
+report_segment_coverage_recall
+report_stenosis_accuracy
+segment_f1_score
+stenosis_mae
+syntax_risk_tier_accuracy
+syntax_score_mae
+timi_flow_accuracy
+
+Total metrics: 21
+
+===================================================================
+SETUP COMPLETE - Summary Report
+===================================================================
+
+✓ Data Conversion:
+  - CardioSYNTAX: 149 cases
+  - ARCADE: 0 cases
+  - Other: 3 cases
+  - TOTAL: 51 cases
+
+✓ Baseline Agents:
+  - cardiomni
+  - local_script
+  - mock
+  - sam_vmnet
+  - syntax_calculator
+  - vlm_baseline
+
+✓ Evaluation Metrics: 21 registered
+
+✓ Pipeline Tests: OK
+
+===================================================================
+Ready for AAAI experiments!
+===================================================================
+
+Next steps:
+1. Implement specialist model wrappers (SAM-VMNet, DeepCORO)
+2. Run baseline evaluations on all tasks
+3. Integrate Cardiomni agent when ready
+4. Generate paper results
+
+Quick commands:
+  List cases:  /opt/anaconda3/bin/python -m pipeline.cli list --toml benchmark.toml
+  Run agent:   /opt/anaconda3/bin/python -m pipeline.cli run --toml benchmark.toml --agent <name>
+  Run tests:   /opt/anaconda3/bin/python -m pytest tests/ -v
+

@@ -1,0 +1,318 @@
+# =============================================================================
+# CardiomniBench-VD — Unified uv Environment Configuration
+# =============================================================================
+# Created: 2025-07-25
+# Python: 3.10 (matches gkp-gsa environment)
+# CUDA: 12.8 (torch 2.11.0+cu128 from PyTorch index)
+#
+# This replaces the conda gkp-gsa environment. Initialize with:
+#   uv sync
+#
+# The existing .venv/ (Python 3.11) will be automatically recreated at 3.10
+# when uv detects the .python-version file.
+#
+# Note: Several specialist model repositories are vendored under
+# algorithms/specialist_models/ with their own dependencies. This configuration
+# covers only the first-party benchmark harness + baseline agents. Vendored
+# code (CM-UNet, CardioSYNTAX, DeepCORO-CLIP, etc.) uses sys.path injection
+# or manual installation—see algorithms/specialist_models/MODEL_INVENTORY.md.
+
+[project]
+name = "cardiomnibench-vd"
+version = "0.1.0"
+description = "Evaluation harness for coronary angiography diagnosis methods (DSA single-modality)"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = {text = "MIT"}
+authors = [
+    {name = "Cardiomni Team"}
+]
+
+# --- Core Dependencies (First-Party Code) ------------------------------------
+# Versions pinned to gkp-gsa environment (checked 2025-07-25).
+# Evidence: AST scan of benchmark/ pipeline/ evaluation/ tests/ algorithms/baselines/
+
+dependencies = [
+    # Deep learning framework (CUDA 12.8)
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    
+    # Medical imaging
+    "monai>=1.6.0",              # monai_unet_runner, nnunet_runner, baselines
+    "nibabel>=5.4.0",            # NIfTI I/O (benchmark.io_spec, baselines)
+    "pydicom>=3.0.0",            # DICOM parsing (toolkit, parse_dsa_metadata)
+    "SimpleITK>=2.5.0",          # image resampling/transforms (gkp-gsa has 2.5.5)
+    
+    # Numerical/scientific
+    "numpy>=2.2.0,<3.0",         # ubiquitous (gkp-gsa: 2.2.6)
+    "scipy>=1.15.0",             # segmentation_metrics, monai/nnunet runners
+    "scikit-image>=0.25.0",      # skimage (monai_unet_runner, metrics)
+    "scikit-learn>=1.7.0",       # sklearn (gkp-gsa: 1.7.2)
+    "pandas>=2.3.0",             # data wrangling (gkp-gsa: 2.3.3)
+    
+    # Vision models
+    "timm>=1.0.0",               # vision transformer backbones (gkp-gsa: 1.0.22)
+    "einops>=0.8.0",             # tensor rearrangement (gkp-gsa: 0.8.2)
+    
+    # Visualization
+    "matplotlib>=3.10.0",        # plotting (gkp-gsa: 3.10.9)
+    "Pillow>=12.0.0",            # PIL for image I/O (gkp-gsa: 12.3.0)
+    "tqdm>=4.68.0",              # progress bars (gkp-gsa: 4.68.3)
+    
+    # Configuration/serialization
+    "pyyaml>=6.0",               # YAML config files (required by requirements.txt)
+    "tomli>=2.4.0; python_version<'3.11'",  # TOML parsing fallback (gkp-gsa: 2.4.1)
+    
+    # nnU-Net dependencies (nnunetv2 2.8.1 in gkp-gsa, installed but no __version__)
+    "nnunetv2>=2.8.0",
+    "acvl-utils>=0.2.6",         # nnU-Net utility (gkp-gsa: 0.2.6)
+    "batchgenerators>=0.25.0",   # data augmentation (gkp-gsa: 0.25.3)
+    "connected-components-3d>=4.0.0",  # CC3D (gkp-gsa: 4.0.0)
+    "graphviz>=0.21",            # nnU-Net planning viz (gkp-gsa: 0.21)
+    
+    # Testing
+    "pytest>=9.0.0",             # test runner (gkp-gsa: 9.1.1)
+]
+
+# --- Optional Dependency Groups ----------------------------------------------
+
+[project.optional-dependencies]
+# API clients for LLM judge and VLM baselines (not needed for offline mock runs)
+llm = [
+    "anthropic>=0.40.0",         # Claude API (judge_backends, claude_agent)
+    "openai>=2.44.0",            # GPT-4V baseline (gkp-gsa: 2.44.0)
+]
+
+# Vision-language models (Qwen, LLaVA) for VLM baseline agents
+# Note: transformers is MISSING in gkp-gsa but needed by vlm_runner
+vlm = [
+    # NOT installed in gkp-gsa, so no reference version exists. The floor below is
+    # inferred from benchmark/vlms.py::ALL_VLMS (Qwen3-VL-8B is the newest entry and
+    # needs a recent transformers) and is UNVERIFIED against a real resolve —
+    # confirm on first `uv sync --extra vlm` and adjust if resolution fails.
+    "transformers>=4.51.0",
+    "accelerate>=1.2.0",         # HF model loading optimization (missing in gkp-gsa)
+    "huggingface-hub>=1.24.0",   # model download (gkp-gsa: 1.24.0)
+    "safetensors>=0.8.0",        # HF checkpoint format (gkp-gsa: 0.8.0)
+]
+
+# PyTorch Lightning for specialist models (MoCo, CM-UNet pretraining)
+# Only needed if retraining vendored models, not for inference
+lightning = [
+    "pytorch-lightning>=2.6.0",  # gkp-gsa: 2.6.5
+    "torchmetrics>=1.9.0",       # gkp-gsa: 1.9.0
+    "tensorboardX>=2.6.0",       # logging (gkp-gsa: 2.6.5)
+]
+
+# Specialist model toolkits (optional, most are vendored or require manual setup)
+# ultralytics/segment_anything/wandb are MISSING in gkp-gsa; included for completeness
+specialist = [
+    "opencv-python-headless>=4.10.0",  # cv2 for image ops (missing in gkp-gsa)
+    # "ultralytics>=8.0.0",      # YOLO models (toolkit.py; MISSING, HF blocked per docs)
+    # "wandb>=0.18.0",           # experiment tracking (MISSING in gkp-gsa)
+    # "nltk>=3.9.0",             # NLP for DeepCORO-CLIP report parsing (MISSING)
+    # "rouge-score>=0.1.0",      # text metrics for DeepCORO-CLIP (MISSING)
+]
+
+# SAM3 foundation model — OFFICIAL Meta package, verified on PyPI 2025-07-25
+# (sam3 0.1.4, facebookresearch/sam3). Isolated in its own extra because of a
+# HARD CONFLICT with the core pins:
+#
+#     sam3 0.1.4 requires  tqdm<4.68.0,>=4.66.0
+#     gkp-gsa ships        tqdm 4.68.3   (core pin is tqdm>=4.68.0)
+#
+# `uv sync --extra sam3` will therefore FAIL to resolve unless the core tqdm
+# floor is relaxed to >=4.66,<4.68. Do not add this to core dependencies.
+#
+# Also note: the task brief referenced github.com/qimingfan10/Sam3, which is a
+# DIFFERENT project from Meta's sam3. The checkpoints already on disk
+# (algorithms/specialist_models/weights/{TC-SemiSAM-checkpoints,sam3-vessel-segmentation}/
+# sam3_original.pt, 3.5 GB) came from the TC-SemiSAM release and their
+# compatibility with this PyPI package is UNVERIFIED. Nothing in the repo
+# currently imports `sam3`, so it stays optional and commented out.
+sam3 = [
+    # "sam3>=0.1.4",             # requires tqdm<4.68 — see conflict note above
+]
+
+# Development tools (linting, type checking, formatting—not in gkp-gsa)
+dev = [
+    "pytest-cov>=6.0.0",         # coverage reporting
+    "ruff>=0.8.0",               # linting + formatting
+    "mypy>=1.15.0",              # type checking
+]
+
+# All optional groups combined (for convenience).
+# `sam3` is deliberately EXCLUDED — it conflicts with the core tqdm pin.
+all = [
+    "cardiomnibench-vd[llm,vlm,lightning,specialist,dev]"
+]
+
+# --- PyTorch CUDA Index Configuration ----------------------------------------
+# torch and torchvision must come from PyTorch's cu128 index, not PyPI.
+# The [[tool.uv.index]] section registers the index; [tool.uv.sources] binds
+# specific packages to it.
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true  # only packages explicitly bound via [tool.uv.sources] use this
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
+
+# --- Packaging Configuration (Hatchling) -------------------------------------
+# The repo has four top-level packages (benchmark, pipeline, evaluation, algorithms)
+# that are imported directly. Hatchling will bundle them into a wheel.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["benchmark", "pipeline", "evaluation", "algorithms"]
+# algorithms/specialist_models/ is ~9.6 GB of vendored repos + checkpoints and is
+# gitignored. Without these excludes a wheel build would try to bundle all of it.
+exclude = [
+    "algorithms/specialist_models/",
+    "**/__pycache__",
+]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["benchmark", "pipeline", "evaluation", "algorithms", "tests", "configs", "rubrics", "methods"]
+exclude = [
+    "algorithms/specialist_models/",
+    "**/__pycache__",
+]
+
+# --- Tool Configuration ------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests requiring CUDA GPU",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+exclude = [
+    ".venv",
+    "__pycache__",
+    "algorithms/specialist_models/github_repos",
+    "algorithms/specialist_models/weights",
+    "runs",
+    "data",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+ignore = [
+    "E501",  # line length (let formatter handle it)
+    "F401",  # unused import (common in __init__.py)
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # gradual adoption
+ignore_missing_imports = true  # many third-party packages lack stubs
+exclude = [
+    "algorithms/specialist_models/",
+    "runs/",
+]
+
+# =============================================================================
+# Installation & Migration Notes
+# =============================================================================
+#
+# 1. Initialize the environment:
+#      uv sync
+#    This creates/updates .venv/ with Python 3.10 and installs all [dependencies].
+#    The existing .venv/ (Python 3.11) will be recreated automatically.
+#
+# 2. Activate the environment:
+#      source .venv/bin/activate
+#    Or run commands directly via:
+#      uv run python -m pytest tests/
+#
+# 3. Install optional groups as needed:
+#      uv sync --extra llm         # for LLM judge + Claude baseline
+#      uv sync --extra vlm         # for VLM baselines (Qwen, LLaVA)
+#      uv sync --all-extras        # everything (11+ GB)
+#
+# 4. Verify CUDA:
+#      uv run python -c "import torch; print(torch.cuda.is_available())"
+#
+# 5. Run the test suite:
+#      uv run python -m pytest tests/ -q
+#
+# 6. Run the pipeline (offline mock mode):
+#      uv run python -m pipeline.cli run --config configs/smoke.yaml
+#
+# 7. Environment comparison (gkp-gsa → uv):
+#      Old: /opt/anaconda3/envs/gkp-gsa/bin/python (3.10.20, conda-managed)
+#      New: .venv/bin/python (3.10.20, uv-managed)
+#      Both use torch 2.11.0+cu128, numpy 2.2.x, monai 1.6.0, etc.
+#
+# --- Known Limitations -------------------------------------------------------
+#
+# • SAM3 (ly17/TC-SemiSAM): No PyPI package. The sam_med3d_runner injects
+#   algorithms/specialist_models/sam_med3d_src/ into sys.path. Weights are
+#   available under specialist_models/weights/TC-SemiSAM-checkpoints/.
+#
+# • segment_anything: The sam_med3d_runner uses a vendored copy in sam_med3d_src/,
+#   not the PyPI package (which is SAM2, incompatible). Do not install from PyPI.
+#
+# • Mamba2 SSM: The att_mamba2_unet architecture optionally uses mamba_ssm.Mamba2
+#   (CUDA kernels). Since nvcc is not available, tests/test_mamba2_torch.py falls
+#   back to a pure-PyTorch reimplementation (algorithms/specialist_models/att_mamba2/
+#   mamba2_torch.py). The checkpoint still loads and runs without mamba_ssm.
+#
+# • Ultralytics YOLO: toolkit.py imports ultralytics but it's commented out in
+#   [project.optional-dependencies.specialist] because HuggingFace downloads are
+#   blocked per MODEL_INVENTORY.md. Manual installation via conda/mamba or local
+#   .whl is required if YOLO baseline is needed.
+#
+# • Vendored specialist models: CM-UNet, CardioSYNTAX, DeepCORO-CLIP, and others
+#   are in algorithms/specialist_models/ with their own requirements (mmcv, mmengine,
+#   etc.). Those are NOT in this pyproject.toml—see MODEL_INVENTORY.md and
+#   WEIGHTS_INVENTORY.md for setup instructions.
+#
+# • transformers: MISSING in gkp-gsa but required by vlm_runner. Install with
+#   `uv sync --extra vlm` if VLM baselines are needed.
+#
+# --- Hard-Coded Paths to Update --------------------------------------------
+#
+# The following files reference hardcoded Python paths and should be updated:
+#
+# Shell scripts (replace with `uv run python` or `source .venv/bin/activate`):
+#   - HANDOFF_CHECK.sh:10         PYTHON=/opt/anaconda3/bin/python
+#   - RUN_BASELINE_TESTS.sh:4      PYTHON=/opt/anaconda3/bin/python
+#
+# Python source code (first-party baselines):
+#   - algorithms/baselines/cardiosyntax_r3d_agent.py:428
+#       "/opt/anaconda3/envs/gkp-gsa/bin/python" (subprocess call)
+#   - algorithms/baselines/cca_unet_agent.py:191
+#       Error message mentions gkp-gsa path
+#
+# Documentation (informational, no code changes needed):
+#   - README.md, docs/*.md, INFRASTRUCTURE_COMPLETE.md
+#       Multiple references to /opt/anaconda3/bin/python
+#
+# After migration:
+# 1. Shell scripts: replace with `uv run python` or set PYTHON=$(which python) after activation
+# 2. Baselines: replace subprocess Python paths with sys.executable
+# 3. Docs: update to recommend `uv run` instead of absolute paths
+#
+# =============================================================================
