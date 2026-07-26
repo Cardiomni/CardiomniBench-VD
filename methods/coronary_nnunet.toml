@@ -1,0 +1,77 @@
+# =============================================================================
+# coronary_nnunet — nnU-Net 3-class (bg, LCA, RCA) coronary segmentation
+# =============================================================================
+# Extracted from algorithms/specialist_models/weights/coronary-seg-nnunet/nnUNet/plans.json
+# and nnU-Net v2 inference conventions.
+#
+# This checkpoint uses nnU-Net's plans-driven pipeline: preprocessing parameters
+# are serialized in plans.json (spacing, normalization stats, patch size, architecture),
+# so most values here are REFERENCES to what's in plans.json, not overrides.
+
+[method]
+name = "coronary_nnunet"
+family = "specialist"
+tasks = ["cca_segmentation"]
+weights_path = "algorithms/specialist_models/weights/coronary-seg-nnunet/nnUNet/checkpoint_final.pth"
+plans_path = "algorithms/specialist_models/weights/coronary-seg-nnunet/nnUNet/plans.json"
+dataset_json_path = "algorithms/specialist_models/weights/coronary-seg-nnunet/nnUNet/dataset.json"
+runner = "nnunet"
+
+[method.provenance]
+source = "mhyu222/coronary-segmentation-nnunet-umamba (nnU-Net variant)"
+trained_on = "Dataset101_Corornary (per plans.json), source cohort not documented"
+domain_relation = "cross_dataset"  # coronary CTA → coronary CTA, different cohort
+paper = "https://huggingface.co/mhyu222/coronary-segmentation-nnunet-umamba"
+reported_dice = "not stated"
+limitations = """
+3-class head (background, LCA, RCA) trained on Dataset101_Corornary. The dataset
+provenance is not documented by the upstream release, but plans.json confirms
+it is coronary CTA (CTNormalization, spacing ~0.5mm). Evaluated on CCA by 
+merging LCA+RCA into a single foreground class.
+"""
+
+# --- Preprocessing (driven by plans.json) -----------------------------------
+# nnU-Net reads all preprocessing parameters from plans.json:
+#   - target_spacing: [0.5, 0.349609375, 0.349609375] (Z, Y, X)
+#   - normalization: CTNormalization using foreground_intensity_properties
+#       mean: 148.6, std: 180.2, percentile_00_5: -165, percentile_99_5: 737
+#   - patch_size: [96, 160, 160]
+#   - architecture: PlainConvUNet with strides [[1,1,1], [2,2,2], [2,2,2], [2,2,2], [2,2,2], [1,2,2]]
+#
+# The runner MUST use plans.json as the source of truth. These fields document
+# what's in there but are not read by the runner (plans.json is).
+
+[preprocess]
+# Reference values from plans.json (read by runner, not set here)
+_note = "These are REFERENCES. Actual values come from plans.json."
+target_spacing_zyx = [0.5, 0.349609375, 0.349609375]
+normalization_scheme = "CTNormalization"
+foreground_mean_hu = 148.575546
+foreground_std_hu = 180.169830
+clip_percentile_00_5 = -165.0
+clip_percentile_99_5 = 737.0
+
+# --- Inference (sliding window) ---------------------------------------------
+[inference]
+# Patch size and strides are in plans.json; runner reads them from there.
+# These are reference values for documentation.
+_note = "roi_size comes from plans.json configuration['3d_fullres']['patch_size']."
+roi_size_ref = [96, 160, 160]  # actual value read from plans
+
+# nnU-Net standard inference settings
+sw_batch_size = 4  # can tune per GPU memory
+overlap = 0.5
+mode = "gaussian"  # nnU-Net default for overlapping patches
+amp = true  # fp16
+
+# nnU-Net outputs logits → softmax → argmax or threshold
+decision_rule = "argmax"  # nnU-Net standard: argmax over {bg, LCA, RCA}
+# For CCA evaluation (binary foreground), merge classes 1+2 into foreground
+
+# --- Postprocessing ---------------------------------------------------------
+[postprocess]
+# Merge multi-class into binary for CCA evaluation
+merge_classes = true  # LCA (1) + RCA (2) → foreground (1), bg (0) stays 0
+
+# Output format
+output_dtype = "uint8"

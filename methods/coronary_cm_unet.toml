@@ -1,0 +1,108 @@
+# CM-UNet on 2D XCA, reproducing the upstream inference pipeline literally.
+#
+# Source: CamilleChallier/CM-UNet, arXiv:2507.17779, Apache-2.0.
+# Architecture and preprocessing are both read from the release rather than
+# inferred: see benchmark/runners/cm_unet_runner.py for the state_dict shapes and
+# the dataset.py lines this mirrors.
+#
+# This variant sets pad_to = 1536 because that is what upstream's
+# get_validation_augmentation does (album.PadIfNeeded to 1536x1536,
+# border_mode=0), followed by a BICUBIC resize to 256x256 in __getitem__.
+#
+# Known consequence, stated up front: our ARCADE frames are 512x512, so padding
+# to 1536 and shrinking to 256 leaves the anatomy on roughly 85x85 pixels inside
+# a mostly-zero canvas. On vessels a few pixels wide that is a severe resolution
+# loss. The paired method `coronary_cm_unet_native` skips the padding; the two are
+# meant to be read together, and both are reported. Which one is "correct" is an
+# empirical question about our data, not a property of the checkpoint.
+
+[method]
+name = "coronary_cm_unet"
+family = "specialist"
+tasks = ["arcade_segmentation", "arcade_stenosis"]
+weights_path = "algorithms/specialist_models/weights/CM-UNet/CM-UNet_weights.pth"
+runner = "cm_unet"
+
+[method.provenance]
+source = "Camsouille/CM-UNet on HuggingFace, file CM-UNet_weights.pth"
+trained_on = "FAME2 X-ray coronary angiography: self-supervised pretraining, then fine-tuning on a small annotated subset"
+domain_relation = "cross_dataset"  # FAME2 and ARCADE are both 2D XCA
+paper = "https://arxiv.org/abs/2507.17779"
+# No reported_dice: upstream states relative Dice gains from self-supervised
+# pretraining (e.g. +48.7% fine-tuning on 18 images) rather than an absolute
+# score on a named split. Inventing a number would create a false reference.
+limitations = """
+Cross-dataset from FAME2 to ARCADE. Both are 2D XCA, so the modality matches and
+only the acquisition source differs.
+
+Two limitations bind before the domain shift does, and both are about output
+structure rather than image quality:
+
+1. No segment names. CM-UNet emits one binary vessel class and cannot name
+   SYNTAX segments. On arcade_stenosis that costs nothing, because gold there has
+   the single class "stenosis". On arcade_segmentation, whose gold uses 25 segment
+   ids, every label-aware metric is 0 by construction.
+
+2. No instance decomposition. Gold splits the tree into anatomical branches
+   (typically 4-7 per frame); connected-component analysis on a binary mask
+   yields 1-4 blobs that do not align with those branches, so matched IoU lands
+   around 0.2-0.3 and misses the 0.5 threshold even ignoring labels.
+
+So read pixel_dice for what this model actually does: 0.57-0.90 per frame on
+ARCADE, which is credible vessel delineation. It is a tool and an upper-bound
+reference for pixel-level vessel extraction, not a competitor on segment naming
+or instance separation.
+"""
+
+# --- Architecture (upstream weights/CM-UNet/CM-UNet/model.py) ---------------
+# Verified against the state dict rather than assumed: down_conv1...0.weight is
+# (64, 1, 3, 3) so Conv2d with one input channel, and conv_last.weight is
+# (2, 64, 1, 1) so two output logits with no built-in softmax. forward() calls
+# x.unsqueeze(1) itself and therefore expects (B, H, W).
+[architecture]
+out_classes = 2
+in_channels = 1
+up_sample_mode = "conv_transpose"
+
+[preprocess]
+# Upstream: album.PadIfNeeded(min_height=1536, min_width=1536, border_mode=0).
+pad_to = 1536
+# Upstream: Image.resize((256, 256), resample=Image.BICUBIC).
+model_input = 256
+# Upstream data_processing/data_processing.ipynb builds the .npy files the
+# training dataset reads via Unsharper(radius=60, amount=3) then
+# Intensity_normalizer (per-image z-score). Finetuning/dataset.py adds no
+# intensity step, which is why reading only that file gives the false impression
+# that raw uint8 is correct: measured Dice 0.000 on ARCADE with raw input against
+# 0.726 with unsharp+z-score on identical weights.
+normalize = "zscore"
+unsharp_radius = 60
+unsharp_amount = 3
+
+[decision]
+# 2 output logits with no built-in softmax. For a 2-class head, argmax is exactly
+# equivalent to thresholding p_foreground at 0.5 - verified empirically on the CCA
+# task, where both rules produced bit-identical masks. Anything other than 0.5
+# would be a real change; 0.5 and argmax are the same rule under two names.
+rule = "argmax"
+
+[instances]
+# CM-UNet is binary (vessel vs background) and cannot name SYNTAX segments, so
+# connected components become instances with a single label.
+label = "vessel"
+# Drop specks below this pixel count. Small enough to keep thin distal vessels,
+# large enough to discard isolated noise pixels from the 256->512 upsample.
+min_component_pixels = 20
+
+# Per-task label override. The label a binary mask should carry depends on what
+# the task's gold calls its single class, and getting this wrong scores 0 for a
+# reason that has nothing to do with the model.
+#
+# arcade_stenosis gold uses exactly one class, "stenosis", so a binary segmenter
+# is not handicapped there at all: the label is free and only geometry is judged.
+# arcade_segmentation gold uses 25 SYNTAX segment ids, which this model cannot
+# produce, so label-aware F1 there is ~0 by construction. That is a real
+# capability gap and is reported as such rather than papered over.
+[instances.per_task]
+arcade_stenosis = "stenosis"
+arcade_segmentation = "vessel"

@@ -1,0 +1,69 @@
+# CM-UNet on 2D XCA, adapted for the 512x512 resolution our ARCADE images come in.
+#
+# This is the same checkpoint as coronary_cm_unet but with pad_to = 0, meaning
+# the 512x512 input is resized directly to 256x256 without the intermediate
+# 1536x1536 padding step that upstream uses. Upstream presumably worked with
+# ~1536px native angiograms where padding is almost a no-op; ours are 512, so
+# pad-then-shrink loses 3x resolution on vessels that are already a few pixels wide.
+#
+# Skipping the pad is a deviation from the published pipeline, which makes this
+# variant inadmissible as a claim about CM-UNet's numbers. It is still a legitimate
+# experiment: the checkpoint holds learned features, and the choice of whether to
+# apply them at full input scale or after a 3x downsample is a decision the harness
+# can and should control rather than leaving implicit.
+#
+# Both variants (this and coronary_cm_unet) are reported. The gap between them
+# tells us how sensitive the model is to preprocessing mismatch, which is a
+# question for the Cardiomni agent: can it identify and choose the better path, or
+# does it blindly follow the model card even when the data is three times smaller
+# than the training set?
+
+[method]
+name = "coronary_cm_unet_native"
+family = "specialist"
+tasks = ["arcade_segmentation", "arcade_stenosis"]
+weights_path = "algorithms/specialist_models/weights/CM-UNet/CM-UNet_weights.pth"
+runner = "cm_unet"
+
+[method.provenance]
+# Same upstream as coronary_cm_unet, but with a TOML-only preprocessing change
+# (pad_to=0 instead of 1536) to adapt to ARCADE's native 512x512 frames. The
+# architecture and weights are byte-identical; only the pipeline differs.
+source = "coronary_cm_unet weights with preprocessing adapted to ARCADE's native frame size"
+trained_on = "FAME2 (see coronary_cm_unet.toml for details)"
+domain_relation = "cross_dataset"
+paper = "https://arxiv.org/abs/2507.17779"
+limitations = """
+Same as coronary_cm_unet. This variant disables the 1536-px padding that makes
+sense for FAME2's typical large frames but crushes ARCADE's 512x512 images into
+the center 1/9 of a zero-padded canvas.
+"""
+
+# Same checkpoint and same architecture as coronary_cm_unet; only [preprocess]
+# differs.
+[architecture]
+out_classes = 2
+in_channels = 1
+up_sample_mode = "conv_transpose"
+
+[preprocess]
+# 0 disables padding; the 512x512 frame goes directly to 256x256.
+pad_to = 0
+model_input = 256
+# Same intensity pipeline as coronary_cm_unet, which is upstream's; only the
+# geometry differs between the two variants. See coronary_cm_unet.toml.
+normalize = "zscore"
+unsharp_radius = 60
+unsharp_amount = 3
+
+[decision]
+rule = "argmax"
+
+[instances]
+# Same reasoning as coronary_cm_unet.toml; see the comments there.
+label = "vessel"
+min_component_pixels = 20
+
+[instances.per_task]
+arcade_stenosis = "stenosis"
+arcade_segmentation = "vessel"

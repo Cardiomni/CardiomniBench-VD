@@ -1,0 +1,110 @@
+# =============================================================================
+# coronary_att_mamba2 — ImageCAS Attention-Mamba2 U-Net (2-channel, Frangi)
+# =============================================================================
+# Extracted from upstream https://github.com/noahschuetz/coronary-artery-segmentation
+# configs/att_mamba2_unet.yaml + src/data/transforms.py::get_val_transforms defaults.
+#
+# Differs from coronary_unet in exactly one respect: the network takes TWO input
+# channels (CT intensity + Frangi vesselness), so [preprocess] enables the
+# vesselness channel. Everything else in the deterministic val chain is identical.
+#
+# This is the SINGLE SOURCE OF TRUTH for this method's preprocessing, inference,
+# and postprocessing. Do not hardcode parameters in runners; read them from here.
+
+[method]
+name = "coronary_att_mamba2"
+family = "specialist"
+tasks = ["cca_segmentation"]
+weights_path = "algorithms/specialist_models/weights/coronary-seg-unet/att_mamba2_unet.pth"
+runner = "monai_unet"
+
+[method.provenance]
+source = "noahschuetz/coronary-segmentation (trained on ImageCAS CTA)"
+trained_on = "ImageCAS Challenge dataset (public coronary CTA)"
+domain_relation = "cross_dataset"  # ImageCAS and CCA are both coronary CTA
+paper = "https://github.com/noahschuetz/coronary-artery-segmentation"
+reported_dice = 0.791  # on ImageCAS validation split per upstream README
+architecture = "AttMamba2UNet"  # custom: MLC + windowed/global attention + Mamba-2 SSM
+limitations = """
+Cross-dataset from ImageCAS to CCA, same caveat as coronary_unet: ImageCAS
+labels the full coronary lumen while CCA labels the internal diameter, a real
+domain shift rather than a bug.
+
+Additionally, this checkpoint requires the custom AttMamba2UNet architecture
+(src/models/segmentation/att_mamba2_net.py upstream), whose AttMamba2Block
+depends on mamba_ssm.Mamba2. It is NOT a MONAI UNet and cannot be loaded by
+architecture inference from the state_dict alone.
+"""
+
+# --- Preprocessing (matches upstream src/data/transforms.py) ----------------
+[preprocess]
+# Resampling to isotropic 1mm (upstream default pixdim)
+pixdim = [1.0, 1.0, 1.0]
+mode = ["bilinear", "nearest"]  # image, label
+
+# Orientation standardization (MONAI default: RAS)
+orientation = "RAS"
+
+# Body/foreground crop to remove air and reduce volume
+body_crop = true
+body_threshold_hu = -500.0
+body_margin = [8, 8, 8]
+
+# HU windowing (contrast-enhanced CTA defaults from upstream)
+window_a_min = -260.0
+window_a_max = 760.0
+
+# Intensity normalization: minmax [0,1] first, then optional z-score
+normalize_mode = "minmax"  # "minmax" | "zscore" | "minmax+zscore"
+normalize_nonzero = true   # for z-score: ignore background in statistics
+normalize_channel_wise = true
+
+# Optional preprocessing (upstream defaults: denoise ON, CLAHE OFF)
+denoise_tv = true
+denoise_weight = 0.06
+denoise_iter = 20
+
+clahe = false
+clahe_clip = 2.0
+clahe_kernel = [64, 64]
+clahe_axis = 2  # apply slice-wise along Z
+
+# Vesselness: ON for att_mamba2_unet — the checkpoint's stem.0.weight has
+# shape (32, 2, 7, 7, 7), i.e. it expects 2 input channels.
+# Parameters are the get_val_transforms defaults (black_ridges=False, since
+# contrast-filled vessels are bright ridges on CTA).
+vesselness = true
+vesselness_sigmas = [1.0, 2.0, 3.0, 4.0]
+vesselness_alpha = 0.5
+vesselness_beta = 0.5
+vesselness_gamma = 15.0
+vesselness_keep_original = true  # append as 2nd channel, not replace
+
+# --- Inference (sliding window) ---------------------------------------------
+[inference]
+roi_size = [96, 96, 96]  # patch size (must match training patch_size)
+sw_batch_size = 4
+overlap = 0.5
+mode = "gaussian"  # gaussian weight for overlapping patches
+amp = true  # automatic mixed precision (fp16)
+
+# Decision rule: softmax → foreground probability → threshold
+decision_rule = "threshold"
+foreground_class = 1  # for 2-class (bg, vessel), fg is class 1
+threshold = 0.5
+
+# Custom architecture: the runner must build AttMamba2UNet rather than infer a
+# MONAI UNet from the state_dict. Channel counts below match the checkpoint.
+architecture = "att_mamba2_unet"
+in_channels = 2
+out_channels = 2
+features = [32, 64, 128, 256]
+
+# --- Postprocessing ---------------------------------------------------------
+[postprocess]
+# Connected component filtering (remove small islands)
+min_component_size = 0  # 0 = disabled; upstream default off for inference.py
+connectivity = 26  # 6 | 18 | 26
+
+# Output format
+output_dtype = "uint8"  # binary mask {0, 1}

@@ -1,0 +1,129 @@
+# =============================================================================
+# cardiosyntax_r3d — R3D-18 + LSTM SYNTAX score prediction
+# =============================================================================
+# Extracted from HuggingFace MesserMMP/coronary-syntax-prediction
+# (official CardioSyntax v2 dataset baseline).
+#
+# Upstream references:
+#   - full_model/rnn_dataset.py: frame loading, channel replication, padding
+#   - inference/rnn_apply.py: ImageNet normalization, resize with antialias, aggregation
+#   - full_model/rnn_model.py: SyntaxLightningModule (R3D-18 backbone + LSTM head)
+#
+# This is the SINGLE SOURCE OF TRUTH for this method's preprocessing, inference,
+# and postprocessing. Do not hardcode parameters in runners; read them from here.
+#
+# NOTE: benchmark/method_config.py's PreprocessConfig schema is CT-segmentation-specific
+# (requires pixdim, orientation, HU windows, roi_size). Video regression methods like
+# this one bypass load_method_config() and read the TOML directly with tomllib.
+# The runner (benchmark/runners/cardiosyntax_r3d_runner.py) delegates to
+# algorithms/baselines/cardiosyntax_r3d_agent.py, which has the preprocessing
+# hardcoded and validated against this spec. Future work: extend method_config.py
+# to support video models, or create a parallel VideoMethodConfig schema.
+
+[method]
+name = "cardiosyntax_r3d"
+family = "specialist"
+tasks = ["cardiosyntax_scoring"]
+weights_path = "algorithms/specialist_models/weights/coronary-syntax-prediction/full_model"
+runner = "benchmark.runners.cardiosyntax_r3d_runner"
+
+[method.provenance]
+source = "HuggingFace MesserMMP/coronary-syntax-prediction"
+trained_on = "CardioSyntax v2 (11,209 Philips Allura/Azurion studies)"
+# Evaluated on the same dataset's held-out test split (100 Philips + 20 Siemens).
+# This is *in-domain* for Philips, cross-vendor for Siemens.
+domain_relation = "in_domain (Philips), cross_vendor (Siemens)"
+paper = "https://www.nature.com/articles/s41597-024-04147-5"
+paper_title = "CardioSyntax: a large-scale dataset for syntax score prediction from coronary angiography"
+# Upstream reported performance on the 120-case test set (mean of 6 annotators as gold):
+reported_metrics = { pearson_r = 0.81, balanced_accuracy_syntax_gt_22 = 0.82, mae = "~6.5" }
+
+[preprocess]
+# Frame extraction from cine clips.
+frames_per_clip = 32  # upstream: FRAMES_PER_CLIP
+frame_sampling = "center"  # validation uses deterministic center crop: (T - 32) // 2
+padding_strategy = "repeat"  # repeat-concatenate clips shorter than 32 frames
+
+# Spatial dimensions.
+input_size = [512, 512]  # .npy files from DICOM pixel_array
+output_size = [256, 256]  # VIDEO_SIZE; resized with antialias=True
+resize_mode = "bilinear_antialias"  # torchvision T.Resize(antialias=True)
+
+# Intensity preprocessing.
+# uint16 DICOM → rescale to [0, 255] uint8 by (pixel / vmax) * 255.
+# Then replicate grey channel 3× (upstream: np.stack([video, video, video], axis=-1)).
+rescale_uint16 = true
+rescale_method = "per_video_max"  # vmax = video.max() per clip
+channel_replication = 3  # grey → RGB
+
+# Normalization: CRITICAL MISMATCH IDENTIFIED.
+# Upstream uses **ImageNet** mean/std (inference/rnn_apply.py line 268-269):
+#   imagenet_mean = [0.485, 0.456, 0.406]
+#   imagenet_std = [0.229, 0.224, 0.225]
+# Our agent (cardiosyntax_r3d_agent.py line 51-52) mistakenly applies **Kinetics-400**:
+#   NORM_MEAN = (0.43216, 0.394666, 0.37645)
+#   NORM_STD = (0.22803, 0.22145, 0.216989)
+# This is a ~5-10% shift in all channels and will degrade performance.
+normalize_mean = [0.485, 0.456, 0.406]  # ImageNet (CORRECT)
+normalize_std = [0.229, 0.224, 0.225]   # ImageNet (CORRECT)
+
+[preprocess.notes]
+# The upstream transform chain (inference/rnn_apply.py line 270-273):
+#   test_transform = T.Compose([
+#       ToTensorVideo(),               # [T,H,W,C] uint8 → [C,T,H,W] float32 / 255
+#       T.Resize(size=(256,256), antialias=True),
+#       Normalize(mean=imagenet_mean, std=imagenet_std),
+#   ])
+# Our agent's clip_to_tensor does the same ToTensorVideo + Resize sequence but:
+#   1. Uses F.interpolate(mode="bilinear", align_corners=False) without antialias flag
+#   2. Normalizes with Kinetics-400 values instead of ImageNet
+# Both are bugs that should be fixed.
+
+[inference]
+# Model architecture.
+backbone = "R3D-18"  # torchvision.models.video.r3d_18
+head = "LSTM"  # variant="lstm_mean" in SyntaxLightningModule
+ensemble = true
+ensemble_folds = [0, 1, 2, 3, 4]  # 5-fold ensemble (left + right models per fold = 10 total)
+
+# Multi-view aggregation.
+# The LSTM head consumes a batch of shape [1, num_views, C, T, H, W] and produces
+# a 2-element output: [classification_logit, log1p(regression_value)].
+# Index 1 is extracted, expm1 applied, and the result is the artery's SYNTAX contribution.
+view_aggregation = "lstm_sequence"  # LSTM processes all views for one artery together
+artery_aggregation = "sum_then_calibrate"  # left + right summed, then a*x+b per fold
+fold_aggregation = "mean"  # average over 5 folds
+output_clamping = "nonnegative"  # max(0.0, score)
+
+# Calibration coefficients (scaling_coeffs/scaling_coeffs.json).
+# Each fold has (a, b) fitted to maximize balanced accuracy for SYNTAX > 22.
+# These inflate scores: a ∈ [1.11, 1.65], b ∈ [-7.8, 5.0].
+# Upstream default is OFF for regression (MAE worsens from ~1.5 to ~8.0 when enabled).
+calibration = false  # --scaling flag in rnn_apply.py, default=False
+
+# Output interpretation.
+# The model head outputs log1p(score), so we apply expm1 to recover the SYNTAX scale.
+output_transform = "expm1"  # np.expm1(raw_output)
+
+[postprocess]
+# SYNTAX score is theoretically unbounded but practically < 100 for nearly all cases.
+# Upstream clamps negatives to zero after calibration but doesn't impose an upper bound.
+score_min = 0.0
+# TOML has no null: omitting score_max means "no upper clamp". Upstream imposes
+# none (inference/rnn_apply.py only does max(0.0, ...)), so leave it unset.
+# score_max = <unset>
+
+# Component reporting.
+# Left and right contributions are reported separately (uncalibrated).
+# Dominance is not predicted (no dominance head in the model; 49/60 test cases lack gold).
+report_components = ["syntax_left", "syntax_right"]
+report_dominance = false
+
+[postprocess.notes]
+# The aggregation logic (inference/rnn_apply.py line 187-199):
+#   if use_scaling:
+#       for each fold: sum left+right, apply fold's (a, b), then mean across folds
+#   else:
+#       for each fold: sum left+right, then mean across folds
+#   final = max(0.0, mean_value)
+# Per-side values are averaged across folds *without* calibration.

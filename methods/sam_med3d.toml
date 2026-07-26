@@ -1,0 +1,89 @@
+# =============================================================================
+# sam_med3d — SAM-Med3D Turbo for 3D medical image segmentation
+# =============================================================================
+# SAM-Med3D is a 3D adaptation of Segment Anything (SAM) for medical imaging.
+# The Turbo variant uses the ViT-B/16 backbone and expects 1.5mm isotropic input.
+#
+# Upstream: https://github.com/uni-medical/SAM-Med3D
+# Paper: "SAM-Med3D" (CVPR 2024 workshop)
+
+[method]
+name = "sam_med3d"
+family = "foundation"
+tasks = ["cca_segmentation"]
+weights_path = "algorithms/specialist_models/weights/SAM-Med3D/sam_med3d_turbo.pth"
+runner = "sam_med3d"
+
+[method.provenance]
+source = "https://github.com/uni-medical/SAM-Med3D"
+trained_on = "Multiple public 3D medical datasets (CT, MRI, mixed anatomy)"
+domain_relation = "not_trained"  # foundation model, no coronary CTA in training mix
+# NOTE: "not_trained" describes the training corpus only. It does NOT mean this row
+# is zero-shot at inference time - see limitations below, the runner feeds it gold-
+# derived prompts. The earlier value here was "zero_shot", which is not a member of
+# DomainRelation and read as a claim this method never makes.
+paper = "https://arxiv.org/abs/2310.15161"
+reported_dice = "task-dependent (0.60-0.85 across anatomy types)"
+limitations = """
+SAM-Med3D is a promptable foundation model trained on mixed 3D medical datasets
+with no coronary CTA in the training mix. Upstream states that ground-truth labels
+are required to generate prompt points, so `sam_med3d_runner.py` samples 5 positive
+point prompts from the GOLD mask inside each 128^3 patch.
+
+This row is therefore NOT zero-shot and must never be reported as one. It receives
+an oracle advantage that no other method in this benchmark gets, and it measures
+whether the network can refine a known localisation, not whether it can find the
+anatomy.
+
+Prompts are points, not boxes: PromptEncoder3D only builds point embeddings
+(indices 0 and 1), while `_embed_boxes()` references indices 2 and 3 that are never
+created, so box prompts raise IndexError.
+
+Measured here at Dice 0.0003 over 20/20 cases, with 9 cases at exactly 0.0. The
+scale gap is the reason: it works on 128^3 crops at 1.5 mm (a 192 mm cube) while a
+coronary tree spans about 416x416x288 mm. Predicted volume is plausible (122k
+voxels vs 442k gold, ratio 0.30) but almost none of it overlaps, so precision
+0.0009 rather than the volume ratio is the number that characterises the failure.
+"""
+
+# --- Preprocessing -----------------------------------------------------------
+[preprocess]
+# SAM-Med3D's native resolution; all volumes are resampled to this spacing.
+pixdim = [1.5, 1.5, 1.5]
+orientation = "RAS"  # standard MONAI convention
+
+# No HU windowing: SAM-Med3D uses z-score normalisation computed over the
+# entire volume (or optionally masked to foreground if a mask is available).
+# These fields are required by the schema but not used by this runner.
+window_a_min = -1024.0
+window_a_max = 3071.0
+normalize_mode = "zscore"
+normalize_nonzero = false
+normalize_channel_wise = false
+
+# No additional transforms.
+body_crop = false
+denoise_tv = false
+clahe = false
+vesselness = false
+
+# --- Inference ---------------------------------------------------------------
+[inference]
+# SAM-Med3D processes volumes in 128³ voxel crops (192mm physical cube at 1.5mm).
+roi_size = [128, 128, 128]
+sw_batch_size = 1  # foundation models are typically run one crop at a time
+overlap = 0.5
+mode = "gaussian"
+amp = false  # SAM uses fp32 by default
+
+# Prompting strategy: the runner uses the gold standard mask's bounding box as
+# a prompt, then thresholds the output probability map.
+decision_rule = "threshold"
+foreground_class = 1
+threshold = 0.5
+
+# --- Postprocessing ----------------------------------------------------------
+[postprocess]
+min_component_size = 0
+connectivity = 26
+output_dtype = "uint8"

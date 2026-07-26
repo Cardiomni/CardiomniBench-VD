@@ -1,0 +1,105 @@
+# =============================================================================
+# coronary_unet — ImageCAS baseline U-Net
+# =============================================================================
+# Extracted from upstream https://github.com/noahschuetz/coronary-artery-segmentation
+# configs/unet_baseline.yaml + src/data/transforms.py defaults.
+#
+# This is the SINGLE SOURCE OF TRUTH for this method's preprocessing, inference,
+# and postprocessing. Do not hardcode parameters in runners; read them from here.
+
+[method]
+name = "coronary_unet"
+family = "specialist"
+tasks = ["cca_segmentation"]
+weights_path = "algorithms/specialist_models/weights/coronary-seg-unet/baseline_unet.pth"
+runner = "monai_unet"
+
+# --- Architecture (upstream src/models/segmentation/baseline_unet.py) -------
+# Transcribed from get_baseline_unet(). Do NOT infer these from the state dict:
+# shape inference previously guessed a 4-stage network and could not load this
+# 5-stage checkpoint at all.
+[architecture]
+kind = "monai_unet"
+spatial_dims = 3
+in_channels = 1        # CT only; the Frangi channel belongs to att_mamba2
+out_channels = 2       # background + artery
+channels = [32, 64, 128, 256, 512]
+strides = [2, 2, 2, 2]
+num_res_units = 2
+norm = "instance"
+
+[method.provenance]
+source = "noahschuetz/coronary-segmentation (trained on ImageCAS CTA)"
+trained_on = "ImageCAS Challenge dataset (public coronary CTA)"
+domain_relation = "cross_dataset"  # ImageCAS and CCA are both coronary CTA
+paper = "https://github.com/noahschuetz/coronary-artery-segmentation"
+reported_dice = 0.788  # on ImageCAS validation split per upstream README
+limitations = """
+Cross-dataset from ImageCAS to CCA. Annotation protocols differ: ImageCAS 
+labels the full coronary lumen, while CCA labels the internal diameter (per 
+CCA README). This systematic difference affects Dice but is a real-world 
+domain shift, not a bug.
+"""
+
+# --- Preprocessing (matches upstream src/data/transforms.py) ----------------
+[preprocess]
+# Resampling to isotropic 1mm (upstream default pixdim)
+pixdim = [1.0, 1.0, 1.0]
+mode = ["bilinear", "nearest"]  # image, label
+
+# Orientation standardization (MONAI default: RAS)
+orientation = "RAS"
+
+# Body/foreground crop to remove air and reduce volume
+body_crop = true
+body_threshold_hu = -500.0
+body_margin = [8, 8, 8]
+
+# HU windowing (contrast-enhanced CTA defaults from upstream)
+window_a_min = -260.0
+window_a_max = 760.0
+
+# Intensity normalization: minmax [0,1] first, then optional z-score
+normalize_mode = "minmax"  # "minmax" | "zscore" | "minmax+zscore"
+normalize_nonzero = true   # for z-score: ignore background in statistics
+normalize_channel_wise = true
+
+# Optional preprocessing (upstream defaults: denoise ON, CLAHE OFF)
+denoise_tv = true
+denoise_weight = 0.06
+denoise_iter = 20
+
+clahe = false
+clahe_clip = 2.0
+clahe_kernel = [64, 64]
+clahe_axis = 2  # apply slice-wise along Z
+
+# Vesselness (only for att_mamba2_unet, OFF for baseline_unet)
+vesselness = false
+vesselness_sigmas = [1.0, 2.0, 3.0, 4.0]
+vesselness_alpha = 0.5
+vesselness_beta = 0.5
+vesselness_gamma = 15.0
+vesselness_keep_original = true  # append as 2nd channel, not replace
+
+# --- Inference (sliding window) ---------------------------------------------
+[inference]
+roi_size = [96, 96, 96]  # patch size (must match training patch_size)
+sw_batch_size = 4
+overlap = 0.5
+mode = "gaussian"  # gaussian weight for overlapping patches
+amp = true  # automatic mixed precision (fp16)
+
+# Decision rule: softmax → foreground probability → threshold
+decision_rule = "threshold"
+foreground_class = 1  # for 2-class (bg, vessel), fg is class 1
+threshold = 0.5
+
+# --- Postprocessing ---------------------------------------------------------
+[postprocess]
+# Connected component filtering (remove small islands)
+min_component_size = 0  # 0 = disabled; upstream default off for inference.py
+connectivity = 26  # 6 | 18 | 26
+
+# Output format
+output_dtype = "uint8"  # binary mask {0, 1}
