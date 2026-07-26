@@ -25,9 +25,16 @@ paper/
 # Raw downloaded datasets (42G) — not source, re-downloadable via scripts/.
 .raw_data/
 
-# Specialist model weights and vendored repos (9.6G, includes nested .git
-# dirs from cloned checkpoints/repos — would become broken gitlinks if added).
-algorithms/specialist_models/
+# Vendored upstream repos (nested .git dirs — would become broken gitlinks) and
+# downloaded checkpoints. Our own adapter code in this tree IS tracked; only the
+# cloned upstreams and binary weights are excluded.
+algorithms/specialist_models/cardiosyntax/
+algorithms/specialist_models/cm_unet/
+algorithms/specialist_models/deepcoro/
+algorithms/specialist_models/deepcoro_clip/
+algorithms/specialist_models/sam_vmnet/
+algorithms/specialist_models/github_repos/
+algorithms/specialist_models/weights/
 
 # Local scratch notes / per-case working files, not part of the benchmark.
 .tmp/
