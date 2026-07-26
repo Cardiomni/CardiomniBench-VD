@@ -10,7 +10,7 @@ Every VLM is pinned to an upstream commit. A Hugging Face repo name alone does n
 |---|---|---|---|
 | `lingshu_7b` | `lingshu-medical-mllm/Lingshu-7B@b98aecd41dfd9d7545a6b8e2f4743ae8471bd7a9` | medical multimodal corpus (Qwen2.5-VL base) | available — 4 shard(s), 16.6GB, rev b98aecd41dfd |
 | `qwen25_vl_7b` | `Qwen/Qwen2.5-VL-7B-Instruct@cc594898137f460bfe9f0759e9844b3ce807cfb5` | general web-scale image-text data | available — 5 shard(s), 16.6GB, rev cc594898137f |
-| `qwen3_vl_8b` | `Qwen/Qwen3-VL-8B-Instruct@0c351dd01ed87e9c1b53cbc748cba10e6187ff3b` | general web-scale image-text data | UNAVAILABLE — 1/4 shards missing (first: model-00001-of-00004.safetensors) |
+| `qwen3_vl_8b` | `Qwen/Qwen3-VL-8B-Instruct@0c351dd01ed87e9c1b53cbc748cba10e6187ff3b` | general web-scale image-text data | available — 4 shard(s), 17.5GB, rev 0c351dd01ed8 |
 | `llava_16_mistral_7b` | `llava-hf/llava-v1.6-mistral-7b-hf@2424fdd47412fccc66d91719126b420e9fbd7065` | general web-scale image-text data | available — 4 shard(s), 15.1GB, rev 2424fdd47412 |
 | `llama3_llava_next_8b` | `llava-hf/llama3-llava-next-8b-hf@b041c0d0ea0dd0196d147206c210c8d1752fc2da` | general web-scale image-text data | available — 4 shard(s), 16.7GB, rev b041c0d0ea0d |
 | `llava_onevision_7b` | `llava-hf/llava-onevision-qwen2-7b-ov-hf@0d50680527681998e456c7b78950205bedd8a068` | general web-scale image-text data | available — 4 shard(s), 16.1GB, rev 0d5068052768 |
