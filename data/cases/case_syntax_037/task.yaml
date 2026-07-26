@@ -1,0 +1,25 @@
+case_id: case_syntax_037
+case_metadata:
+  creation_date: '2026-07-25'
+  difficulty_level: easy
+  notes: 'CardioSYNTAX category: 6-10分 (中度)'
+  source_dataset: CardioSYNTAX
+  study_uid: 1.3.46.670589.28.26690171363123020231010071830032633
+  task_type: syntax_scoring
+gold_standard:
+  dominance: left
+  lesions:
+  - location: unknown
+    stenosis_percent: 0
+    syntax_contribution: 8.0
+  syntax_score:
+    left: 4.0
+    right: 4.0
+    risk_tier: low
+    total: 8.0
+input:
+  clinical_context:
+    lca_video_count: 5
+    rca_video_count: 2
+    total_videos: 7
+task_version: 1.0.0
