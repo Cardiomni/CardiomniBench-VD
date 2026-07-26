@@ -90,3 +90,49 @@ OPENAI_API_KEY = "${OPENAI_API_KEY}"
 backend = "local"
 model = "anthropic/claude-opus-4-8"
 command = "python scripts/my_agent.py --task-spec {task_spec} --out {output_dir}/prediction.json --model {model}"
+
+# =============================================================================
+# Specialist Model Baselines (added 2026-07-25)
+# =============================================================================
+
+# SAM-VMNet: Vessel segmentation specialist
+[agents.sam_vmnet]
+backend = "local"
+model = "SAM-VMNet"
+command = "python algorithms/baselines/sam_vmnet_agent.py --task-spec {task_spec} --output {output_dir}/prediction.json --device cuda:3"
+[agents.sam_vmnet.env]
+CUDA_VISIBLE_DEVICES = "3"
+
+# SYNTAX Calculator: Rule-based SYNTAX scoring
+[agents.syntax_calculator]
+backend = "local"
+model = "SYNTAX-RuleBased"
+command = "python algorithms/baselines/syntax_agent.py --task-spec {task_spec} --output {output_dir}/prediction.json"
+
+# DeepCORO-CLIP: Stenosis detection specialist
+[agents.deepcoro]
+backend = "local"
+model = "DeepCORO-CLIP"
+command = "python algorithms/baselines/deepcoro_agent.py --task-spec {task_spec} --output {output_dir}/prediction.json --device cuda:3"
+[agents.deepcoro.env]
+CUDA_VISIBLE_DEVICES = "3"
+
+# =============================================================================
+# General-purpose MLLM Baselines (EchoAgent-style, added 2026-07-25)
+# =============================================================================
+
+# GPT-4V: Pure VLM reasoning baseline (对应EchoAgent的GPT-5)
+[agents.gpt4v]
+backend = "local"
+model = "gpt-4o"
+command = "python algorithms/baselines/gpt4v_agent.py --task-spec {task_spec} --output {output_dir}/prediction.json --model {model}"
+[agents.gpt4v.env]
+OPENAI_API_KEY = "${OPENAI_API_KEY}"
+
+# Claude 3 Opus: Pure VLM reasoning baseline
+[agents.claude]
+backend = "local"
+model = "claude-3-opus-20240229"
+command = "python algorithms/baselines/claude_agent.py --task-spec {task_spec} --output {output_dir}/prediction.json --model {model}"
+[agents.claude.env]
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"

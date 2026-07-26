@@ -33,6 +33,11 @@ gold_standard:
     - 0.292812
     - 0.098066
     - 0.16168
+    bbox_xywh_px:
+    - 186
+    - 150
+    - 50
+    - 83
   - instance_id: 1
     label: '2'
     bbox_xywh_norm:
@@ -40,6 +45,11 @@ gold_standard:
     - 0.446484
     - 0.091094
     - 0.262715
+    bbox_xywh_px:
+    - 153
+    - 229
+    - 47
+    - 134
   - instance_id: 2
     label: '4'
     bbox_xywh_norm:
@@ -47,6 +57,11 @@ gold_standard:
     - 0.629551
     - 0.547891
     - 0.128906
+    bbox_xywh_px:
+    - 226
+    - 322
+    - 280
+    - 66
   - instance_id: 3
     label: 16a
     bbox_xywh_norm:
@@ -54,6 +69,11 @@ gold_standard:
     - 0.567168
     - 0.307969
     - 0.057539
+    bbox_xywh_px:
+    - 233
+    - 290
+    - 158
+    - 30
   - instance_id: 4
     label: '3'
     bbox_xywh_norm:
@@ -61,6 +81,11 @@ gold_standard:
     - 0.619531
     - 0.111895
     - 0.088223
+    bbox_xywh_px:
+    - 172
+    - 317
+    - 57
+    - 45
   - instance_id: 5
     label: 16b
     bbox_xywh_norm:
@@ -68,6 +93,11 @@ gold_standard:
     - 0.472969
     - 0.22625
     - 0.048516
+    bbox_xywh_px:
+    - 280
+    - 242
+    - 116
+    - 25
   - instance_id: 6
     label: 16c
     bbox_xywh_norm:
@@ -75,6 +105,11 @@ gold_standard:
     - 0.375391
     - 0.321543
     - 0.073887
+    bbox_xywh_px:
+    - 312
+    - 192
+    - 164
+    - 38
   - instance_id: 7
     label: '16'
     bbox_xywh_norm:
@@ -82,6 +117,11 @@ gold_standard:
     - 0.203359
     - 0.435781
     - 0.428301
+    bbox_xywh_px:
+    - 220
+    - 104
+    - 223
+    - 219
   num_instances: 8
   masks_file: ../../gold/case_arcade_seg_0029_270-3/masks.npz
   mask_note: bbox-local binary masks, one array per instance_id

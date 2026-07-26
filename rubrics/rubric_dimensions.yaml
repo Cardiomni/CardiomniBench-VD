@@ -1,144 +1,152 @@
-# CardiomniBench-VD Rubric Dimensions
-# 6 weighted dimensions mirroring BiomniBench-DA's process-level evaluation framework
+# CardiomniBench-VD Rubric Dimensions (DSA-only evaluation)
+# 7 weighted dimensions aligned with PROPOSAL.md §3 — single-modality coronary angiography
 
 dimensions:
   - name: "data_handling"
     chinese_name: "数据处理"
     weight: 0.10
     description: |
-      DICOM读取、多帧/3D体数据加载、HU值提取、窗宽窗位调整、
-      CTA-DSA配对验证、数据质量初判（运动伪影/对比剂充盈）。
-      Covers the ability to correctly parse DICOM files, extract pixel data and metadata,
-      handle multi-frame XA sequences, verify CTA-DSA pairing, and assess data quality.
+      DSA DICOM读取、多帧XA序列加载、像素数据提取、投照角度识别、
+      数据质量初判（运动伪影/对比剂充盈/呼吸运动）。
+      Covers the ability to correctly parse DSA DICOM files (Modality=XA), extract pixel data
+      and metadata from multi-frame angiography sequences, identify projection angles
+      (RAO/LAO/cranial/caudal), and assess data quality (motion artifacts, contrast opacification).
     corresponds_to_biomnibench: "Data Handling"
     failure_modes:
-      - "无法读取DICOM或丢失像素数据 / Failed to read DICOM or lost pixel data"
-      - "混淆CTA与DSA模态 / Confused CTA and DSA modalities"
-      - "窗宽窗位设置不当导致血管不可见 / Improper window settings rendering vessels invisible"
+      - "无法读取XA DICOM或丢失帧序列 / Failed to read XA DICOM or lost frame sequences"
+      - "未正确解析投照角度元数据 / Failed to parse projection angle metadata"
       - "未检测到运动伪影或对比剂充盈不足 / Missed motion artifacts or inadequate contrast opacification"
     clinical_impact: "Low if caught early; critical if propagated to downstream analysis"
 
-  - name: "perception_accuracy"
-    chinese_name: "感知准确性"
+  - name: "stenosis_accuracy"
+    chinese_name: "狭窄准确性"
     weight: 0.25
     description: |
-      血管段识别（SYNTAX分段命名）、优势型判断、狭窄百分比定量、
-      CAD-RADS分档、斑块性质识别（钙化/软/混合）、钙化评分（Agatston）、
-      高危斑块特征（低衰减/正性重构/餐巾环/点状钙化）、
-      血流/血栓/侧支分级（TIMI/Rentrop）、病变形态分型（ACC/AHA）。
-      Measures accuracy in vessel segment identification per SYNTAX nomenclature,
-      stenosis quantification, CAD-RADS grading, plaque characterization,
-      calcium scoring, high-risk plaque features, flow grading, and lesion morphology.
+      狭窄百分比定量准确性（QCA方法或AI辅助测量），临床分层一致性
+      （<50% / 50-69% / 70-99% / 100%闭塞），DSA投照选择（多角度验证，
+      避免重叠/短缩）。核心诊断指标。
+      Measures stenosis percentage quantification accuracy using QCA-style diameter measurement
+      or AI-assisted tools, clinical tier consistency (<50% / 50-69% / 70-99% / 100% occlusion),
+      and proper DSA projection selection (multi-angle verification to avoid overlap/foreshortening).
+      Core diagnostic metric — ±10% tolerance or same-tier match.
     corresponds_to_biomnibench: "Method Selection"
     failure_modes:
-      - "血管段命名错误或遗漏主要段 / Incorrect segment naming or missed major segments"
       - "狭窄百分比误差>20%或分档错≥2档 / Stenosis error >20% or grading off by ≥2 tiers"
-      - "钙化与软斑块混淆 / Confused calcified vs. soft plaque"
-      - "未识别高危斑块特征 / Missed high-risk plaque features"
-      - "TIMI血流或Rentrop侧支分级错误 / Incorrect TIMI or Rentrop grading"
-    clinical_impact: "High — incorrect stenosis grading directly affects treatment decisions"
+      - "单一投照角度导致重叠误判 / Single projection causing overlap misjudgment"
+      - "未采用正交或多角度验证 / Did not use orthogonal or multi-angle verification"
+    clinical_impact: "High — incorrect stenosis grading directly affects revascularization decisions"
 
-  - name: "fusion_reasoning"
-    chinese_name: "融合推理"
-    weight: 0.20
-    description: |
-      CTA-DSA跨模态一致性验证、钙化blooming校正（重钙化时采用DSA定量）、
-      CTO综合判断（CTA断端形态+DSA侧支循环）、
-      易损斑块与管腔狭窄整合（低衰减斑块+中度狭窄→高风险）、
-      罪犯血管定位（急性事件时）。
-      Evaluates cross-modal CTA-DSA integration, calcium blooming correction,
-      CTO assessment combining CTA stump morphology with DSA collaterals,
-      integration of vulnerable plaque with luminal stenosis, and culprit lesion identification.
-    corresponds_to_biomnibench: "Statistical Rigor / Execution"
-    failure_modes:
-      - "重度钙化时未采用DSA定量，错用CTA高估值 / Used CTA instead of DSA for heavy calcium, overestimating stenosis"
-      - "CTA-DSA结论矛盾时无合理解释 / No explanation for CTA-DSA discrepancies"
-      - "CTO判断遗漏侧支循环信息 / CTO assessment missed collateral information"
-      - "未整合易损斑块与功能学意义 / Failed to integrate vulnerable plaque with functional significance"
-    clinical_impact: "High — calcium blooming errors lead to unnecessary invasive procedures"
-    # This dimension is where the paper's core "why paired CTA+DSA" claim is scored.
-    # It maps directly to the C-class fusion-required conclusions in PROPOSAL §2.3:
-    # calcium-blooming correction, vulnerable-plaque-with-mild-lumen, accurate SYNTAX,
-    # CTO recanalizability, and anatomy-function mismatch attribution. Cases tagged
-    # case_metadata.fusion_category == "fusion_required" carry the most weight here,
-    # and the fusion-lift experiment (fusion_metrics.compute_fusion_lift) measures
-    # whether paired-input agents beat single-modality agents specifically on this subset.
-    primary_fusion_dimension: true
-
-  - name: "clinical_interpretation"
-    chinese_name: "临床解释"
-    weight: 0.20
-    description: |
-      CAD-RADS per-patient总分、SYNTAX Score计算与风险分层（低/中/高）、
-      血运重建建议（PCI vs CABG，依据SYNTAX Score与指南）、
-      随访与药物治疗建议、临床意义解读（如"左主干+三支病变→高危→CABG优先"）。
-      Evaluates CAD-RADS per-patient grading, SYNTAX Score calculation and risk stratification,
-      revascularization recommendations per 2021 ACC/AHA & 2024 ESC guidelines,
-      follow-up and medical therapy recommendations, and clinical significance interpretation.
-    corresponds_to_biomnibench: "Biological Interpretation"
-    failure_modes:
-      - "SYNTAX Score计算错误导致风险分层错误 / SYNTAX Score calculation error leading to wrong risk tier"
-      - "PCI vs CABG建议违反指南共识 / PCI vs CABG recommendation violates guideline consensus"
-      - "遗漏高危特征（如左主干病变）的临床意义 / Missed clinical significance of high-risk features (e.g., left main disease)"
-      - "对50-69%中度狭窄未提及需FFR指导 / Did not mention FFR guidance for 50-69% stenosis"
-    clinical_impact: "Critical — wrong treatment choice affects survival and quality of life"
-
-  - name: "scientific_reasoning"
-    chinese_name: "科学推理"
+  - name: "segment_coverage"
+    chinese_name: "血管段覆盖度"
     weight: 0.15
     description: |
-      推理轨迹的连贯性与逻辑性、证据引用的准确性（如引用具体SYNTAX段、HU值、狭窄%）、
-      不确定性的合理表达、结论与证据的匹配度、可解释性（非专业人员能否理解决策依据）。
-      Assesses coherence and logic of reasoning trace, accuracy of evidence citations
-      (e.g., citing specific SYNTAX segments, HU values, stenosis %), appropriate expression
-      of uncertainty, match between conclusions and evidence, and explainability to non-specialists.
-    corresponds_to_biomnibench: "Statistical Rigor"
+      SYNTAX 16段命名系统的完整性，主要血管段识别（LM / LAD / LCx / RCA及其分支），
+      遗漏段检测（应报告"未见明显狭窄"而非忽略），系统性扫描能力。
+      Evaluates completeness per SYNTAX 16-segment nomenclature, major vessel segment identification
+      (LM / LAD / LCx / RCA and branches), detection of omissions (should report "no significant
+      stenosis" rather than ignoring), and systematic scanning capability.
+    corresponds_to_biomnibench: "Method Selection"
     failure_modes:
-      - "结论与引用证据矛盾 / Conclusion contradicts cited evidence"
-      - "跳跃式推理缺少中间步骤 / Reasoning jumps without intermediate steps"
-      - "过度自信，未表达不确定性 / Overconfident, failed to express uncertainty"
-      - "引用的SYNTAX段或狭窄值与实际不符 / Cited SYNTAX segments or stenosis values do not match actual findings"
-    clinical_impact: "Medium — affects trust and auditability, but may not directly change treatment if conclusions are correct"
+      - "遗漏主要血管段（如对角支/钝缘支） / Missed major segments (e.g., diagonal, obtuse marginal)"
+      - "仅报告病变段，未覆盖正常段 / Only reported diseased segments, did not cover normal segments"
+      - "血管段命名错误或不符合SYNTAX规范 / Incorrect segment naming or non-SYNTAX nomenclature"
+    clinical_impact: "Medium — missed segments may harbor unrecognized disease"
 
-  - name: "source_reliability"
-    chinese_name: "来源可靠性/反幻觉"
+  - name: "naming_accuracy"
+    chinese_name: "命名准确性"
     weight: 0.10
     description: |
-      诚实性与能力边界意识：是否在需要FFR/IVUS/灌注显像/病史时正确声明证据不足，
-      而非编造数值；是否避免引用不存在的检查结果。
-      此维度可分配**负分**，对编造FFR值、IVUS结果、心肌活力评估等进行惩罚。
+      SYNTAX血管段命名准确性（如LAD近/中/远段、D1/D2、OM1/OM2、PDA/PLV），
+      分叉病变Medina分型，术语规范性（避免自创缩写或非标准命名）。
+      Assesses accuracy of SYNTAX segment naming (e.g., proximal/mid/distal LAD, D1/D2, OM1/OM2,
+      PDA/PLV), bifurcation lesion Medina classification, and terminology compliance
+      (avoiding invented abbreviations or non-standard naming).
+    corresponds_to_biomnibench: "Method Selection"
+    failure_modes:
+      - "段命名与SYNTAX标准不符 / Segment naming does not match SYNTAX standard"
+      - "分叉病变未用Medina分型 / Bifurcation lesion not classified by Medina"
+      - "使用非标准缩写或模糊描述 / Used non-standard abbreviations or vague descriptions"
+    clinical_impact: "Low — terminology errors affect communication but rarely treatment"
+
+  - name: "dominance_correctness"
+    chinese_name: "优势型正确性"
+    weight: 0.05
+    description: |
+      冠脉优势型判断（右优势/左优势/共优势），依据PDA与PLV供血来源。
+      基础解剖判断，Stage 1前置步骤。
+      Evaluates coronary dominance determination (right / left / codominant) based on
+      PDA and PLV supply. Foundational anatomical judgment, prerequisite for Stage 1.
+    corresponds_to_biomnibench: "Data Handling"
+    failure_modes:
+      - "优势型判断错误 / Incorrect dominance determination"
+      - "未明确说明优势型 / Did not explicitly state dominance"
+    clinical_impact: "Low — mainly affects nomenclature, rarely treatment"
+
+  - name: "reasoning_traceability"
+    chinese_name: "推理可追溯性"
+    weight: 0.20
+    description: |
+      四阶段SOP流程的清晰性（Stage 1优势型→Stage 2系统性段扫描→Stage 3投照选择→
+      Stage 4病变评估），推理轨迹的连贯性与逻辑性，证据引用的准确性
+      （如引用具体帧号、投照角度、测量值），工具调用合理性（SAM分割/QCA测径/
+      DeepCORO二次确认），不确定性的合理表达。
+      Assesses clarity of the four-stage SOP pipeline (Stage 1 dominance → Stage 2 systematic
+      segment scan → Stage 3 projection selection → Stage 4 lesion assessment), coherence and
+      logic of reasoning trace, accuracy of evidence citations (e.g., citing specific frame numbers,
+      projection angles, measurements), rationality of tool invocations (SAM segmentation / QCA
+      diameter / DeepCORO second opinion), and appropriate expression of uncertainty.
+    corresponds_to_biomnibench: "Statistical Rigor"
+    failure_modes:
+      - "跳过系统性扫描直接评估病变 / Skipped systematic scan and jumped to lesion assessment"
+      - "推理轨迹缺少中间步骤或逻辑跳跃 / Reasoning trace lacks intermediate steps or logical jumps"
+      - "引用的帧号/投照角度/测量值与实际不符 / Cited frame/projection/measurement does not match actual"
+      - "工具调用无合理依据（如对明显正常段调用复杂分割） / Tool invocation without rationale"
+      - "过度自信，未表达不确定性 / Overconfident, failed to express uncertainty"
+    clinical_impact: "Medium — affects trust, auditability, and reproducibility"
+
+  - name: "anti_hallucination"
+    chinese_name: "反幻觉"
+    weight: 0.15
+    description: |
+      诚实性与能力边界意识：是否在需要FFR/IVUS/OCT/灌注显像/病史时正确声明证据不足，
+      而非编造数值；是否避免引用不存在的检查结果或虚构斑块性质（DSA无法直接评估
+      钙化/软斑块）；对50-69%中度狭窄是否说明需功能学评估。
+      此维度可分配**负分**，对编造FFR值、IVUS结果、CTA钙化评分等进行惩罚。
       Evaluates honesty and capability boundary awareness: correctly stating insufficient evidence
-      when FFR/IVUS/perfusion imaging/patient history is needed, instead of fabricating values;
-      avoiding citation of non-existent test results.
-      This dimension allows **negative points** as penalty for fabricating FFR values,
-      IVUS results, myocardial viability assessments, etc.
+      when FFR/IVUS/OCT/perfusion imaging/patient history is needed, instead of fabricating values;
+      avoiding citation of non-existent test results or fabricated plaque characteristics
+      (DSA cannot directly assess calcified/soft plaque); stating need for functional assessment
+      for 50-69% intermediate stenosis.
+      This dimension allows **negative points** as penalty for fabricating FFR values, IVUS results,
+      CTA calcium scores, etc.
     corresponds_to_biomnibench: "Source Reliability"
     failure_modes:
       - "编造FFR或iFR数值（输入未提供） / Fabricated FFR or iFR values (not provided in input)"
-      - "声称进行了IVUS/OCT评估（实际未提供） / Claimed IVUS/OCT assessment (not provided)"
-      - "编造心肌灌注或活力结果 / Fabricated myocardial perfusion or viability results"
+      - "声称进行了IVUS/OCT/CTA评估（实际未提供） / Claimed IVUS/OCT/CTA assessment (not provided)"
+      - "编造斑块性质（钙化/软斑块）而DSA无此信息 / Fabricated plaque characteristics (calcified/soft) unavailable in DSA"
       - "引用不存在的病史或实验室检查 / Cited non-existent patient history or lab results"
       - "对50-69%中度狭窄直接给出血运重建建议（应说明需FFR） / Directly recommended revascularization for 50-69% stenosis (should state FFR needed)"
     clinical_impact: "Critical — hallucinated data can lead to catastrophic treatment errors"
     anti_hallucination_penalty: true
 
 # Dimension weights sum check
-weights_sum: 1.00  # 0.10 + 0.25 + 0.20 + 0.20 + 0.15 + 0.10 = 1.00
+weights_sum: 1.00  # 0.10 + 0.25 + 0.15 + 0.10 + 0.05 + 0.20 + 0.15 = 1.00
 
 # Mapping to BiomniBench-DA dimensions
 biomnibench_mapping:
   data_handling: "Data Handling"
-  perception_accuracy: "Method Selection"
-  fusion_reasoning: "Statistical Rigor / Execution"
-  clinical_interpretation: "Biological Interpretation"
-  scientific_reasoning: "Statistical Rigor"
-  source_reliability: "Source Reliability"
+  stenosis_accuracy: "Method Selection"
+  segment_coverage: "Method Selection"
+  naming_accuracy: "Method Selection"
+  dominance_correctness: "Data Handling"
+  reasoning_traceability: "Statistical Rigor / Execution"
+  anti_hallucination: "Source Reliability"
 
 # Reference
 reference: |
   BiomniBench-DA evaluates 6 dimensions: Data Handling, Method Selection, Statistical Rigor,
   Execution, Biological Interpretation, Source Reliability.
-  CardiomniBench-VD adapts this framework to cardiovascular imaging, with perception_accuracy
-  corresponding to method selection (choosing the right quantification approach),
-  fusion_reasoning corresponding to execution (correct integration of multimodal data),
-  and anti-hallucination (source_reliability) being critical for clinical safety.
+  CardiomniBench-VD (DSA-only) adapts this framework to single-modality coronary angiography,
+  with stenosis_accuracy as the core diagnostic metric, reasoning_traceability capturing the
+  four-stage SOP pipeline logic, and anti_hallucination being critical for clinical safety
+  (penalizing fabrication of unavailable modalities like CTA or functional tests like FFR).

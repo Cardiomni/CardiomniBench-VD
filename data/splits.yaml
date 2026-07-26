@@ -1,115 +1,251 @@
-# Data splits for CardiomniBench-VD
-# EMPTY TEMPLATE — to be populated after case collection and annotation
-
-# =============================================================================
-# Split Configuration
-# =============================================================================
-split_version: "1.0.0"
-creation_date: ""
-split_strategy: "stratified"  # Stratified by difficulty and pathology distribution
+split_version: 1.0.0
+creation_date: '2026-07-25'
+split_strategy: stratified
 random_seed: 42
-
-# =============================================================================
-# Split Ratios
-# =============================================================================
+description: Train/val/test splits for CardiomniBench-VD (ARCADE + CardioSYNTAX public
+  data)
 ratios:
-  train: 0.60  # For agent development, few-shot learning
-  val: 0.20    # For hyperparameter tuning, judge calibration
-  test: 0.20   # Held-out for final evaluation
-
-# =============================================================================
-# Stratification Criteria
-# =============================================================================
+  train: 0.6
+  val: 0.2
+  test: 0.2
 stratification:
   by_difficulty:
-    easy: 0.33    # Single-vessel, no calcium, clear stenosis
-    medium: 0.34  # Multi-vessel or moderate calcium
-    hard: 0.33    # CTO, heavy calcium, bifurcation, left main
-
-  by_pathology:
-    multi_vessel: 0.40
-    cto: 0.20
-    heavy_calcium: 0.25
-    bifurcation: 0.20
-    left_main: 0.15
-    note: "Cases can have multiple tags; percentages are target minimums"
-
-  by_cadrads:
-    CAD-RADS_0-2: 0.20   # Minimal to mild
-    CAD-RADS_3: 0.25     # Moderate (needs FFR)
-    CAD-RADS_4A: 0.30    # Severe
-    CAD-RADS_4B: 0.15    # Left main or three-vessel
-    CAD-RADS_5: 0.10     # Total occlusion
-
-  by_syntax_risk:
-    low: 0.40       # ≤22
-    intermediate: 0.35  # 23-32
-    high: 0.25      # ≥33
-
-# =============================================================================
-# Train Split
-# =============================================================================
+    easy: Single-vessel, clear stenosis or simple segmentation
+    medium: Multi-vessel or moderate complexity
+    hard: High SYNTAX score, many segments, or complex anatomy
+  by_task_type:
+    arcade_segmentation: Vessel structure segmentation (ARCADE)
+    arcade_stenosis: Stenosis region detection (ARCADE)
+    cardiosyntax_scoring: SYNTAX score prediction (CardioSYNTAX)
 train:
-  case_ids: []
-  # Example:
-  # - case_001
-  # - case_002
-  # - ...
-  num_cases: 0
-  difficulty_distribution: {}
-  pathology_distribution: {}
-
-# =============================================================================
-# Validation Split
-# =============================================================================
+  case_ids:
+  - case_arcade_seg_0006_139-5
+  - case_arcade_seg_0007_14-5
+  - case_arcade_seg_0008_148-5
+  - case_arcade_seg_0010_157-5
+  - case_arcade_seg_0013_175-5
+  - case_arcade_seg_0015_179-5
+  - case_arcade_seg_0016_182-5
+  - case_arcade_seg_0017_19-5
+  - case_arcade_seg_0018_194-5
+  - case_arcade_seg_0020_205-3
+  - case_arcade_seg_0021_207-3
+  - case_arcade_seg_0022_21-5
+  - case_arcade_seg_0023_214-3
+  - case_arcade_seg_0024_221-3
+  - case_arcade_seg_0025_224-3
+  - case_arcade_seg_0026_227-3
+  - case_arcade_seg_0027_229-3
+  - case_arcade_seg_0029_270-3
+  - case_arcade_seg_0031_283-3
+  - case_arcade_seg_0032_297-3
+  - case_arcade_seg_0035_32-5
+  - case_arcade_seg_0036_43-5
+  - case_arcade_seg_0037_44-5
+  - case_arcade_seg_0039_65-5
+  - case_arcade_sten_0001_104-6
+  - case_arcade_sten_0002_105-6
+  - case_arcade_sten_0005_109-6
+  - case_arcade_sten_0008_116-6
+  - case_arcade_sten_0010_121-6
+  - case_arcade_sten_0011_122-6
+  - case_arcade_sten_0012_124-6
+  - case_arcade_sten_0015_130-6
+  - case_arcade_sten_0017_134-6
+  - case_arcade_sten_0019_136-6
+  - case_arcade_sten_0021_14-6
+  - case_arcade_sten_0022_141-6
+  - case_arcade_sten_0023_144-6
+  - case_arcade_sten_0027_153-6
+  - case_arcade_sten_0028_155-6
+  - case_arcade_sten_0029_160-6
+  - case_arcade_sten_0030_164-6
+  - case_arcade_sten_0032_170-6
+  - case_arcade_sten_0033_176-6
+  - case_arcade_sten_0034_177-6
+  - case_arcade_sten_0035_183-6
+  - case_arcade_sten_0039_190-6
+  - case_arcade_sten_0043_198-6
+  - case_arcade_sten_0044_199-6
+  - case_arcade_sten_0045_20-6
+  - case_arcade_sten_0046_200-6
+  - case_arcade_sten_0049_224-4
+  - case_arcade_sten_0052_228-4
+  - case_arcade_sten_0054_252-4
+  - case_arcade_sten_0055_264-4
+  - case_arcade_sten_0057_274-4
+  - case_arcade_sten_0058_276-4
+  - case_arcade_sten_0060_281-4
+  - case_arcade_sten_0061_29-6
+  - case_arcade_sten_0062_294-4
+  - case_arcade_sten_0063_295-4
+  - case_arcade_sten_0064_49-6
+  - case_arcade_sten_0065_54-6
+  - case_arcade_sten_0066_79-6
+  - case_arcade_sten_0068_83-6
+  - case_arcade_sten_0069_89-6
+  - case_csyn_0001_14183422
+  - case_csyn_0002_02817955
+  - case_csyn_0003_50103540
+  - case_csyn_0005_48518704
+  - case_csyn_0007_32064629
+  - case_csyn_0009_35184933
+  - case_csyn_0011_22227970
+  - case_csyn_0013_18639250
+  - case_csyn_0015_31438178
+  - case_csyn_0016_13174362
+  - case_csyn_0017_30180674
+  - case_csyn_0020_18873230
+  - case_csyn_0021_47943370
+  - case_csyn_0022_64281590
+  - case_csyn_0023_01290820
+  - case_csyn_0025_00499886
+  - case_csyn_0027_50145556
+  - case_csyn_0028_31387788
+  - case_csyn_0029_13132154
+  - case_csyn_0030_58949353
+  - case_csyn_0031_04085720
+  - case_csyn_0032_93517566
+  - case_csyn_0037_16569455
+  - case_csyn_0039_24373298
+  - case_csyn_0041_55652415
+  - case_csyn_0042_03785195
+  - case_csyn_0043_35778704
+  - case_csyn_0046_32922118
+  - case_csyn_0048_09292312
+  - case_csyn_0050_49198555
+  - case_csyn_0051_25301186
+  - case_csyn_0053_28351679
+  - case_csyn_0057_46659253
+  - case_csyn_0058_53212740
+  - case_csyn_0060_36066100
+  num_cases: 100
+  distribution:
+    difficulty:
+      easy: 5
+      medium: 44
+      hard: 16
+      high: 7
+      low: 26
+      intermediate: 2
+    task_type:
+      arcade_segmentation: 24
+      arcade_stenosis: 41
+      cardiosyntax_scoring: 35
+    total: 100
+  purpose: Agent development, few-shot learning, model training
 val:
-  case_ids: []
-  num_cases: 0
-  difficulty_distribution: {}
-  pathology_distribution: {}
-  purpose: |
-    - Calibrate LLM-judge grading thresholds
-    - Validate objective metric implementations
-    - Hyperparameter tuning for agent systems
-
-# =============================================================================
-# Test Split
-# =============================================================================
+  case_ids:
+  - case_arcade_seg_0002_106-5
+  - case_arcade_seg_0004_109-5
+  - case_arcade_seg_0005_136-5
+  - case_arcade_seg_0011_159-5
+  - case_arcade_seg_0019_199-5
+  - case_arcade_seg_0028_235-3
+  - case_arcade_seg_0042_89-5
+  - case_arcade_sten_0006_11-6
+  - case_arcade_sten_0007_114-6
+  - case_arcade_sten_0016_132-6
+  - case_arcade_sten_0020_137-6
+  - case_arcade_sten_0025_15-6
+  - case_arcade_sten_0026_150-6
+  - case_arcade_sten_0037_186-6
+  - case_arcade_sten_0038_187-6
+  - case_arcade_sten_0041_194-6
+  - case_arcade_sten_0042_195-6
+  - case_arcade_sten_0051_227-4
+  - case_arcade_sten_0059_280-4
+  - case_arcade_sten_0067_82-6
+  - case_csyn_0004_42941214
+  - case_csyn_0006_30141307
+  - case_csyn_0008_43403579
+  - case_csyn_0010_25004830
+  - case_csyn_0019_58351112
+  - case_csyn_0034_06390833
+  - case_csyn_0035_46461877
+  - case_csyn_0044_53049943
+  - case_csyn_0045_81696277
+  - case_csyn_0055_05441898
+  num_cases: 30
+  distribution:
+    difficulty:
+      hard: 5
+      easy: 1
+      medium: 14
+      low: 8
+      high: 2
+    task_type:
+      arcade_segmentation: 7
+      arcade_stenosis: 13
+      cardiosyntax_scoring: 10
+    total: 30
+  purpose: Hyperparameter tuning, judge calibration, checkpoint selection
 test:
-  case_ids: []
-  num_cases: 0
-  difficulty_distribution: {}
-  pathology_distribution: {}
-  purpose: |
-    - Final held-out evaluation
-    - Never used during development or judge calibration
-    - Results reported in paper
-  embargo: true  # Gold standard not released until after competition/publication
-
-# =============================================================================
-# Constraints
-# =============================================================================
+  case_ids:
+  - case_arcade_seg_0001_101-5
+  - case_arcade_seg_0003_108-5
+  - case_arcade_seg_0009_151-5
+  - case_arcade_seg_0012_168-5
+  - case_arcade_seg_0014_176-5
+  - case_arcade_seg_0030_273-3
+  - case_arcade_seg_0033_3-5
+  - case_arcade_seg_0034_31-5
+  - case_arcade_seg_0038_58-5
+  - case_arcade_seg_0040_71-5
+  - case_arcade_seg_0041_77-5
+  - case_arcade_sten_0003_106-6
+  - case_arcade_sten_0004_107-6
+  - case_arcade_sten_0009_12-6
+  - case_arcade_sten_0013_128-6
+  - case_arcade_sten_0014_129-6
+  - case_arcade_sten_0018_135-6
+  - case_arcade_sten_0024_146-6
+  - case_arcade_sten_0031_168-6
+  - case_arcade_sten_0036_185-6
+  - case_arcade_sten_0040_191-6
+  - case_arcade_sten_0047_21-6
+  - case_arcade_sten_0048_219-4
+  - case_arcade_sten_0050_225-4
+  - case_arcade_sten_0053_24-6
+  - case_arcade_sten_0056_266-4
+  - case_csyn_0012_26057257
+  - case_csyn_0014_25799267
+  - case_csyn_0018_28094490
+  - case_csyn_0024_65026377
+  - case_csyn_0026_16108254
+  - case_csyn_0033_01780131
+  - case_csyn_0036_42243776
+  - case_csyn_0038_01266594
+  - case_csyn_0040_39629626
+  - case_csyn_0047_01845704
+  - case_csyn_0049_55388940
+  - case_csyn_0052_55564843
+  - case_csyn_0054_56299276
+  - case_csyn_0056_58524607
+  - case_csyn_0059_16185247
+  num_cases: 41
+  distribution:
+    difficulty:
+      easy: 3
+      hard: 6
+      medium: 17
+      high: 3
+      low: 10
+      intermediate: 2
+    task_type:
+      arcade_segmentation: 11
+      arcade_stenosis: 15
+      cardiosyntax_scoring: 15
+    total: 41
+  purpose: Final held-out evaluation reported in paper
+  embargo: false
 constraints:
-  - "No patient appears in multiple splits (enforce at patient level, not study level)"
-  - "Each split must have ≥1 case of each major pathology type"
-  - "Test split must have difficulty distribution matching overall corpus"
-  - "Cases with rare pathologies (e.g., left main) distributed across all splits"
-
-# =============================================================================
-# Future Multi-Institutional Extension
-# =============================================================================
-multi_institutional:
-  enabled: false
-  institutions: []
-  # Future structure:
-  # - id: institution_A
-  #   name: "Hospital A"
-  #   num_cases: 0
-  #   case_ids: []
-  # - id: institution_B
-  #   name: "Hospital B"
-  #   num_cases: 0
-  #   case_ids: []
-  cross_institution_validation:
-    enabled: false
-    note: "Train on institution A, test on institution B to assess generalization"
+- Each split has balanced representation of task types
+- Each split has balanced representation of difficulty levels
+- No overlap between splits (disjoint sets)
+- Reproducible with random_seed=42
+dataset_summary:
+  total_cases: 171
+  arcade_segmentation: 42
+  arcade_stenosis: 69
+  cardiosyntax_scoring: 60

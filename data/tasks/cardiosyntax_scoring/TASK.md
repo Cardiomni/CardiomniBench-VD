@@ -7,9 +7,12 @@
 `cardiosyntax_scoring` — study-level regression (score) + classification (dominance).
 
 ## Source
-CardioSYNTAX (Ponomarchuk et al., WACV 2025, arXiv:2407.19894). The on-disk **Part 9**
-subset = **44 studies** with real cine videos. Source: `Datasets/CardioSYNTAX/9/`,
-metadata `part9.json`.
+CardioSYNTAX (Ponomarchuk et al., WACV 2025, arXiv:2407.19894). Our subset = the
+**60 three-expert-annotated studies** — the studies for which three interventional
+cardiologists independently scored SYNTAX. This is the highest-value slice: it
+carries a gold *reliability band*, not just a point label. Videos on disk at
+`Datasets/CardioSYNTAX/datasets/<uid>/*.npy` (478 videos total, 6–14 per study,
+avg 8). Score metadata from `all.json`; expert triples from `three_experts.json`.
 
 ## Input (what the agent reads)
 All projection cine videos for one patient study.
@@ -40,16 +43,23 @@ multiple projections + angle metadata, to be integrated across views.
 - `dominance` — `"right"` or `"left"` (SYNTAX defines **no** co-dominant option).
 
 ## Gold standard (stripped from `task_spec.json`)
-`task.yaml.gold_standard`: `syntax_score`, `syntax_left`, `syntax_right`,
-`dominance`, `bypass`, `risk_band` (low ≤22 / intermediate 23–32 / high ≥33).
+`task.yaml.gold_standard`:
+- **Primary label** (official, paper-aligned): `syntax_score`, `syntax_left`,
+  `syntax_right`, `dominance`, `bypass`, `risk_band` (low ≤22 / intermediate
+  23–32 / high ≥33).
+- **Reliability band** (3 independent expert reads): `expert_scores` (the triple),
+  `expert_median`, `expert_mean`, `expert_min`, `expert_max`, `expert_spread`.
 
-Data notes: 66% of these 44 studies are normal (score 0); dominance is labeled on
-only some studies; 60-study 3-expert annotations exist upstream (mean inter-expert
-spread 8.6 pts, 17% full agreement) — useful later as a gold-reliability ceiling.
+Subset stats (60 studies): score range 0–58; **12 normal (0) / 48 with disease**;
+risk bands 44 low / 4 intermediate / 12 high; **mean inter-expert spread 8.6 pts**
+(max 30) — the built-in ceiling for any predictor. Dominance labeled on **11/60**
+(`case_metadata.has_dominance_label` flags them).
 
 ## Metric (deferred)
-Score: **MAE / RMSE / R²** vs gold. Dominance: **accuracy**. Optional:
-fraction of predictions within the 3-expert range.
+Score: **MAE / RMSE / R²** vs the official `syntax_score`. Dominance:
+**accuracy** (on the 11 labeled studies). Reliability-aware aux: **fraction of
+predictions inside the 3-expert `[min,max]` band** — credits a prediction that
+lands where the experts themselves disagree, matching Cardiomni's tolerance model.
 
 ## Status note
 SYNTAX score is **future-work** per the pivot (not a current paper claim). But the

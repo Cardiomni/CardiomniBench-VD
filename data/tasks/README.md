@@ -12,9 +12,9 @@ globbing `case_*` under a task's `cases/` dir (see per-task config in
 | `arcade_segmentation` | ARCADE | 1 XCA frame (512²) | segment instances: SYNTAX id + bbox + mask | mean F1/img | 42 |
 | `arcade_stenosis` | ARCADE | 1 XCA frame (512²) | stenosis instances: bbox + mask (location only) | mean F1/img | 69 |
 | `cca_segmentation` | CCA | 1 CTA volume (3D) | binary 3D vessel mask | Dice | 20 |
-| `cardiosyntax_scoring` | CardioSYNTAX | N cine videos + angles | SYNTAX score + dominance | MAE/R²/acc | 44 |
+| `cardiosyntax_scoring` | CardioSYNTAX | N cine videos + angles | SYNTAX score (+3-expert band) + dominance | MAE/R²/acc | 60 |
 
-Total **175 cases**. Rubric/scoring is **deferred** — right now every task is a
+Total **191 cases**. Rubric/scoring is **deferred** — right now every task is a
 clean **input → output** contract (input = the images/videos, output = exactly the
 labels present in the source data). See each task's `TASK.md`.
 
@@ -58,7 +58,7 @@ python -m pipeline.cli run  --config configs/tasks/cardiosyntax_scoring.yaml   #
 ```bash
 python scripts/gen_arcade_cases.py        # 42 + 69
 python scripts/gen_cca_cases.py           # 20
-python scripts/gen_cardiosyntax_cases.py  # 44
+python scripts/gen_cardiosyntax_cases.py  # 60 (three-expert subset)
 ```
 
 ## Relation to the existing DSA-report task

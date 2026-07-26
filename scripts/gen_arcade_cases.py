@@ -61,16 +61,36 @@ def build_task(task_tag, subset_file, task_name, task_type, difficulty_fn):
         # input: symlink the image into the case folder
         relsym(DS / "data" / fn, cdir / "image.png")
 
+        # Frame size, read once: it defines both the input spec below and the
+        # pixel boxes recorded per instance.
+        W = int(s["metadata"].get("width", 512))
+        H = int(s["metadata"].get("height", 512))
+
         # gold: labels + normalized bboxes inline; masks -> gold sidecar
         instances, masks = [], {}
         for j, d in enumerate(dets):
+            mask = decode_mask(d)
+            bx, by, bw, bh = (float(v) for v in d["bounding_box"])
             inst = {
                 "instance_id": j,
                 "label": str(d["label"]),
                 "bbox_xywh_norm": [round(float(x), 6) for x in d["bounding_box"]],
+                # Pixel box, stored explicitly because the mask's own shape is the
+                # authority for its extent. Recovering it from the rounded
+                # normalised box does not work: the mask is cropped in source
+                # pixel coordinates while bbox_xywh_norm is rounded to 6 decimals,
+                # so the two disagree by +/-1 px on ~7% of instances and no
+                # rounding convention reproduces all of them. Scoring code that
+                # reconstructed the box was silently resizing gold masks.
+                "bbox_xywh_px": [
+                    int(round(bx * W)),
+                    int(round(by * H)),
+                    int(mask.shape[1]),
+                    int(mask.shape[0]),
+                ],
             }
             instances.append(inst)
-            masks[f"inst_{j}"] = decode_mask(d)
+            masks[f"inst_{j}"] = mask
         gcase = gold_dir / case_id
         gcase.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(gcase / "masks.npz", **masks)
@@ -96,8 +116,8 @@ def build_task(task_tag, subset_file, task_name, task_type, difficulty_fn):
                 "modality": "XCA",  # X-ray coronary angiography, single frame
                 "image": {
                     "file_path": "image.png",
-                    "width": s["metadata"].get("width", 512),
-                    "height": s["metadata"].get("height", 512),
+                    "width": W,
+                    "height": H,
                     "note": "Single 2D angiography frame, grayscale.",
                 },
             },

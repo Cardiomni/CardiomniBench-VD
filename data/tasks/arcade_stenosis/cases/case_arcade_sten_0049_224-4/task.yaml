@@ -33,6 +33,11 @@ gold_standard:
     - 0.613633
     - 0.027285
     - 0.154941
+    bbox_xywh_px:
+    - 281
+    - 314
+    - 14
+    - 80
   - instance_id: 1
     label: stenosis
     bbox_xywh_norm:
@@ -40,6 +45,11 @@ gold_standard:
     - 0.353359
     - 0.071387
     - 0.040586
+    bbox_xywh_px:
+    - 145
+    - 181
+    - 37
+    - 21
   num_instances: 2
   masks_file: ../../gold/case_arcade_sten_0049_224-4/masks.npz
   mask_note: bbox-local binary masks, one array per instance_id
