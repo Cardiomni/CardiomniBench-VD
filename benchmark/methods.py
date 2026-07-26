@@ -192,76 +192,24 @@ SPECIALISTS: list[Method] = [
 
 
 # --------------------------------------------------------------------------
-# VISION-LANGUAGE MODELS (prompted zero-shot, no fine-tuning)
+# VISION-LANGUAGE MODELS
 # --------------------------------------------------------------------------
+#
+# Intentionally empty. The VLM registry lives in benchmark/vlms.py, which is what
+# run_unified.py, harnesses.py and harness_runner.py import.
+#
+# A second list of VLMs used to live here and had drifted out of agreement with
+# vlms.py in three ways that would each corrupt a comparison:
+#   * no pinned revisions, so a row did not identify the weights it scored with;
+#   * different names for the same checkpoint (llava_next_mistral vs
+#     llava_16_mistral_7b, lingshu vs lingshu_7b), which double-counts a model;
+#   * cca_segmentation in the task tuple, which vlms.py deliberately withholds
+#     because a dense 3D mask is not answerable by a text-output model.
+# It also listed checkpoints that are not loadable here (llava_med, janus_pro,
+# huatuo_vision). Keeping one registry is what makes "swap only the harness"
+# true. Add VLMs in benchmark/vlms.py.
 
-def _vlm(
-    name: str,
-    repo: str,
-    source: str,
-    notes: str = "",
-    tasks: tuple[Task, ...] = ("cardiosyntax_scoring", "cca_segmentation"),
-) -> Method:
-    return Method(
-        name=name,
-        family="vlm",
-        tasks=tasks,
-        runner="benchmark.runners.vlm",
-        config={"repo": repo, "hf_cache": str(HF_CACHE), "cross_domain": True},
-        source=source,
-        reported="n/a (not trained for these tasks)",
-        notes=notes,
-    )
-
-
-VLMS: list[Method] = [
-    _vlm(
-        "qwen3_vl_8b",
-        "Qwen/Qwen3-VL-8B-Instruct",
-        "Qwen3-VL (latest generation, open weights)",
-        "Strongest open general-purpose VLM in this set.",
-    ),
-    _vlm(
-        "llava_med",
-        "microsoft/llava-med-v1.5-mistral-7b",
-        "LLaVA-Med v1.5 (medical, 2023)",
-        "Medical-domain VLM used as a baseline by EchoAgent.",
-    ),
-    _vlm(
-        "llava_next_mistral",
-        "llava-hf/llava-v1.6-mistral-7b-hf",
-        "LLaVA-NeXT v1.6, Mistral-7B base",
-        "Same base model as LLaVA-Med, so it isolates medical pretraining.",
-    ),
-    _vlm(
-        "llava_next_llama3",
-        "llava-hf/llama3-llava-next-8b-hf",
-        "LLaVA-NeXT, Llama-3-8B base",
-    ),
-    _vlm(
-        "llava_onevision",
-        "llava-hf/llava-onevision-qwen2-7b-ov-hf",
-        "LLaVA-OneVision (Qwen2-7B base)",
-        "Handles multi-image and video input natively.",
-    ),
-    _vlm(
-        "janus_pro",
-        "deepseek-ai/Janus-Pro-7B",
-        "DeepSeek Janus-Pro-7B",
-    ),
-    _vlm(
-        "lingshu",
-        "lingshu-medical-mllm/Lingshu-7B",
-        "Lingshu-7B (medical, 2025)",
-        "Newer medical VLM than LLaVA-Med.",
-    ),
-    _vlm(
-        "huatuo_vision",
-        "FreedomIntelligence/HuatuoGPT-Vision-7B",
-        "HuatuoGPT-Vision-7B (Chinese medical)",
-        "Chinese-language medical VLM; matches the report template register.",
-    ),
-]
+VLMS: list[Method] = []
 
 
 ALL_METHODS: list[Method] = SPECIALISTS + VLMS

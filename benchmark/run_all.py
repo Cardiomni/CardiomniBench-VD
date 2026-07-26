@@ -1,4 +1,18 @@
 """
+SUPERSEDED — use ``python -m benchmark.run_unified`` instead.
+
+This runner predates run_unified.py and is kept only for reference. It resolves
+methods through benchmark.methods.BY_NAME, which no longer contains any VLM (the
+VLM registry with pinned revisions lives in benchmark/vlms.py), so VLM names do
+not resolve here. Every recent run, including the reported ones, used run_unified.
+
+Specialist-only invocations still work, but new work should go through
+run_unified so there is one code path for prompts, preprocessing, and pinning.
+
+Original design notes follow.
+
+---
+
 Unified benchmark runner for CardiomniBench-VD.
 
 One command, all methods, both tasks. No adaptive branching, no schema guessing,
